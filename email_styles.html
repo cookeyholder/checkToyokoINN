@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>郵件通知風格預覽</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+
+        .preview-section {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .preview-section h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            color: #555;
+        }
+
+        /* 通用郵件結構 */
+        .email-body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .email-header {
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .email-header h2 {
+            margin: 0;
+            color: inherit;
+        }
+
+        .email-content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            margin-top: 10px;
+            border-left: 4px solid;
+        }
+
+        .email-info-row {
+            margin: 10px 0;
+        }
+
+        .email-label {
+            font-weight: bold;
+            color: #666;
+            width: 100px;
+            display: inline-block;
+        }
+
+        .email-value {
+            color: #333;
+        }
+
+        .email-booking-button {
+            display: inline-block;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .email-footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        /* 風格 1: 科技藍 */
+        .theme-1 .email-header {
+            background-color: #1e88e5;
+            color: white;
+        }
+
+        .theme-1 .email-content {
+            border-color: #42a5f5;
+        }
+
+        .theme-1 .email-booking-button {
+            background: linear-gradient(135deg, #1565c0 0%, #1e88e5 100%);
+            color: white;
+            border: none;
+        }
+
+        .theme-1 .email-booking-button:hover {
+            background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(30, 136, 229, 0.4);
+        }
+
+        /* 風格 2: 溫暖珊瑚 */
+        .theme-2 .email-header {
+            background-color: #ff7f50;
+            color: white;
+        }
+
+        .theme-2 .email-content {
+            border-color: #ffb347;
+        }
+
+        .theme-2 .email-booking-button {
+            background-color: #ffffff;
+            color: #ff7f50;
+            border: 2px solid #ff7f50;
+        }
+
+        .theme-2 .email-booking-button:hover {
+            background-color: #ff7f50;
+            color: white;
+        }
+
+        /* 風格 3: 櫻花粉 */
+        .theme-3 .email-header {
+            background-color: #ffb7c5;
+            color: #333;
+        }
+
+        .theme-3 .email-content {
+            border-color: #ffc9d9;
+            background-color: #fff5f7;
+        }
+
+        .theme-3 .email-label {
+            color: #e91e63;
+        }
+
+        .theme-3 .email-value {
+            color: #333;
+        }
+
+        .theme-3 .email-booking-button {
+            background-color: #e91e63;
+            color: white;
+            border: 2px solid #c2185b;
+        }
+
+        .theme-3 .email-booking-button:hover {
+            background-color: #c2185b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(233, 30, 99, 0.3);
+        }
+
+        /* 風格 4: 陽光黃 */
+        .theme-4 .email-header {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .theme-4 .email-content {
+            border-color: #ffca2c;
+        }
+
+        .theme-4 .email-booking-button {
+            background-color: #FFDAB9;
+            color: #8B4513;
+            border: 2px solid #FFA07A;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+
+        .theme-4 .email-booking-button:hover {
+            background-color: #FFA07A;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 風格 5: 清新薄荷 */
+        .theme-5 .email-header {
+            background-color: #26a69a;
+            color: white;
+        }
+
+        .theme-5 .email-content {
+            border-color: #80cbc4;
+        }
+
+        .theme-5 .email-booking-button {
+            background-color: #ffffff;
+            color: #26a69a;
+            border: 2px solid #26a69a;
+        }
+
+        .theme-5 .email-booking-button:hover {
+            background-color: #26a69a;
+            color: white;
+        }
+
+        /* 風格 6: 深紫羅蘭 */
+        .theme-6 .email-header {
+            background-color: #8e44ad;
+            color: white;
+        }
+
+        .theme-6 .email-content {
+            border-color: #9b59b6;
+        }
+
+        .theme-6 .email-booking-button {
+            background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+            color: white;
+            border: none;
+        }
+
+        .theme-6 .email-booking-button:hover {
+            background: linear-gradient(135deg, #6c3483 0%, #8e44ad 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(142, 68, 173, 0.4);
+        }
+
+        /* 風格 7: 翡翠綠 */
+        .theme-7 .email-header {
+            background-color: #16a085;
+            color: white;
+        }
+
+        .theme-7 .email-content {
+            border-color: #1abc9c;
+        }
+
+        .theme-7 .email-booking-button {
+            background-color: #ffffff;
+            color: #16a085;
+            border: 2px solid #16a085;
+        }
+
+        .theme-7 .email-booking-button:hover {
+            background-color: #16a085;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(22, 160, 133, 0.3);
+        }
+
+        /* 風格 8: 酒紅色 */
+        .theme-8 .email-header {
+            background-color: #a52a2a;
+            color: white;
+        }
+
+        .theme-8 .email-content {
+            border-color: #cd5c5c;
+        }
+
+        .theme-8 .email-booking-button {
+            background-color: #ffffff;
+            color: #a52a2a;
+            border: 2px solid #a52a2a;
+        }
+
+        .theme-8 .email-booking-button:hover {
+            background-color: #a52a2a;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(165, 42, 42, 0.3);
+        }
+
+        /* 風格 9: 活力橙 */
+        .theme-9 .email-header {
+            background-color: #f77f00;
+            color: white;
+        }
+
+        .theme-9 .email-content {
+            border-color: #fcbf49;
+        }
+
+        .theme-9 .email-booking-button {
+            background-color: #003049;
+            color: white;
+        }
+
+        .theme-9 .email-booking-button:hover {
+            background-color: #d62828;
+        }
+
+        /* 風格 10: 湖水綠 */
+        .theme-10 .email-header {
+            background-color: #00b4d8;
+            color: white;
+        }
+
+        .theme-10 .email-content {
+            border-color: #90e0ef;
+        }
+
+        .theme-10 .email-booking-button {
+            background: #03045e;
+            color: white;
+        }
+
+        .theme-10 .email-booking-button:hover {
+            background: #0077b6;
+        }
+
+        /* 風格 11: 深海軍藍 */
+        .theme-11 .email-header {
+            background-color: #003d5c;
+            color: white;
+        }
+
+        .theme-11 .email-content {
+            border-color: #0077be;
+        }
+
+        .theme-11 .email-booking-button {
+            background: linear-gradient(135deg, #003d5c 0%, #005f8c 100%);
+            color: white;
+            border: none;
+        }
+
+        .theme-11 .email-booking-button:hover {
+            background: linear-gradient(135deg, #002840 0%, #003d5c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 61, 92, 0.4);
+        }
+
+        /* 風格 12: 天空藍 */
+        .theme-12 .email-header {
+            background-color: #29b6f6;
+            color: white;
+        }
+
+        .theme-12 .email-content {
+            border-color: #81d4fa;
+        }
+
+        .theme-12 .email-booking-button {
+            background-color: #ffffff;
+            color: #0277bd;
+            border: 2px solid #0277bd;
+        }
+
+        .theme-12 .email-booking-button:hover {
+            background-color: #0277bd;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(2, 119, 189, 0.3);
+        }
+
+        /* 風格 13: 玫瑰金 */
+        .theme-13 .email-header {
+            background-color: #e0afa0;
+            color: #333;
+        }
+
+        .theme-13 .email-content {
+            border-color: #f4c2c2;
+            background-color: #fef5f5;
+        }
+
+        .theme-13 .email-label {
+            color: #b76e79;
+        }
+
+        .theme-13 .email-value {
+            color: #333;
+        }
+
+        .theme-13 .email-booking-button {
+            background: linear-gradient(135deg, #c9ada7 0%, #e0afa0 100%);
+            color: #333;
+            border: 2px solid #b76e79;
+        }
+
+        .theme-13 .email-booking-button:hover {
+            background: linear-gradient(135deg, #b76e79 0%, #c9ada7 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(183, 110, 121, 0.3);
+        }
+
+        /* 風格 14: 湛藍 */
+        .theme-14 .email-header {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .theme-14 .email-content {
+            border-color: #42a5f5;
+        }
+
+        .theme-14 .email-booking-button {
+            background-color: #ffffff;
+            color: #1976d2;
+            border: 2px solid #1976d2;
+        }
+
+        .theme-14 .email-booking-button:hover {
+            background-color: #1976d2;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(25, 118, 210, 0.3);
+        }
+
+        /* 風格 15: 摩卡棕 */
+        .theme-15 .email-header {
+            background-color: #6f4e37;
+            color: white;
+        }
+
+        .theme-15 .email-content {
+            border-color: #a0826d;
+        }
+
+        .theme-15 .email-booking-button {
+            background: linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%);
+            color: white;
+            border: none;
+        }
+
+        .theme-15 .email-booking-button:hover {
+            background: linear-gradient(135deg, #5a3d2b 0%, #6f4e37 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(111, 78, 55, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>郵件通知風格預覽</h1>
+
+    <!-- Base Template -->
+    <template id="email-template">
+        <div class="email-body">
+            <div class="email-container">
+                <div class="email-header">
+                    <h2>【東橫 INN 空房通知】</h2>
+                </div>
+                <div class="email-content">
+                    <h3>好消息！您監控的房間現在有空房了</h3>
+                    <div class="email-info-row"><span class="email-label">分店：</span><span
+                            class="email-value">東京新宿歌舞伎町</span></div>
+                    <div class="email-info-row"><span class="email-label">房型：</span><span
+                            class="email-value">經濟雙人房</span></div>
+                    <div class="email-info-row"><span class="email-label">入住日期：</span><span
+                            class="email-value">2025-12-24</span></div>
+                    <div class="email-info-row"><span class="email-label">退房日期：</span><span
+                            class="email-value">2025-12-25</span></div>
+                    <div class="email-info-row"><span class="email-label">人數：</span><span class="email-value">2 位成人，1
+                            間房間</span></div>
+                    <div class="email-info-row"><span class="email-label">檢查時間：</span><span
+                            class="email-value">2025-11-13T15:30:00.000Z</span></div>
+                    <p style="margin-top: 20px; color: #666;">請立即點擊下方按鈕前往東橫 INN 網站進行預訂</p>
+                    <a href="#" class="email-booking-button">前往預訂</a>
+                    <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                        此郵件是由東橫 INN 空房監控系統自動發送。<br>
+                        如有任何問題，請聯繫系統管理員。
+                    </p>
+                </div>
+                <div class="email-footer">
+                    <p>東橫 INN 房間可用性監控系統</p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <div id="previews"></div>
+
+    <script>
+        const themes = [
+            {id: 1, name: "科技藍 (Tech Blue)"},
+            {id: 2, name: "溫暖珊瑚 (Warm Coral)"},
+            {id: 3, name: "櫻花粉 (Cherry Blossom)"},
+            {id: 4, name: "陽光黃 (Sunny Yellow)"},
+            {id: 5, name: "清新薄荷 (Minty Fresh)"},
+            {id: 9, name: "活力橙 (Vibrant Orange)"},
+            {id: 10, name: "湖水綠 (Lake Green)"},
+            {id: 12, name: "天空藍 (Sky Blue)"},
+            {id: 13, name: "玫瑰金 (Rose Gold)"},
+            {id: 6, name: "深紫羅蘭 (Deep Violet)"},
+            {id: 7, name: "翡翠綠 (Emerald Green)"},
+            {id: 8, name: "酒紅色 (Wine Red)"},
+            {id: 11, name: "深海軍藍 (Navy Blue)"},
+            {id: 14, name: "湛藍 (Azure Blue)"},
+            {id: 15, name: "摩卡棕 (Mocha Brown)"}
+        ];
+
+        const template = document.getElementById('email-template');
+        const previewsContainer = document.getElementById('previews');
+
+        themes.forEach(theme => {
+            const section = document.createElement('div');
+            section.className = 'preview-section';
+
+            const title = document.createElement('h2');
+            title.textContent = `風格 ${theme.id}: ${theme.name}`;
+            section.appendChild(title);
+
+            const previewContent = document.createElement('div');
+            previewContent.className = `theme-${theme.id}`;
+            previewContent.appendChild(template.content.cloneNode(true));
+            section.appendChild(previewContent);
+
+            previewsContainer.appendChild(section);
+        });
+    </script>
+
+</body>
+
+</html>

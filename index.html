@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東橫 INN 空房監控系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "Yu Gothic", sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--theme-primary, #f44336);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h2 {
+            color: var(--theme-primary, #f44336);
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid var(--theme-primary, #f44336);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #555;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--theme-primary, #f44336);
+            box-shadow: 0 0 5px var(--theme-shadow, rgba(244, 67, 54, 0.3));
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--theme-primary, #f44336);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--theme-primary-dark, #d32f2f);
+        }
+
+        .btn-secondary {
+            background-color: #757575;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #616161;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .reminder-list {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+        }
+
+        .reminder-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-top: 4px solid var(--theme-primary, #f44336);
+        }
+
+        .reminder-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .reminder-card.paused {
+            opacity: 0.7;
+            border-top-color: #ccc;
+        }
+
+        .reminder-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .reminder-card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .reminder-card-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .reminder-status-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background-color: var(--theme-light, #e3f2fd);
+            color: var(--theme-primary, #1976d2);
+            font-weight: 500;
+        }
+
+        .reminder-status-badge.paused {
+            background-color: #f5f5f5;
+            color: #999;
+        }
+
+        .reminder-card-body {
+            margin-bottom: 15px;
+        }
+
+        .reminder-detail {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .reminder-detail-icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .reminder-expired {
+            background-color: #fff3e0;
+            color: #e65100;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .reminder-card-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .reminder-card-actions button {
+            flex: 1;
+            min-width: 70px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            grid-column: 1 / -1;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .alert-info {
+            background-color: var(--theme-light, #e3f2fd);
+            color: var(--theme-primary, #1976d2);
+            border-left: 4px solid var(--theme-primary, #1976d2);
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+        }
+
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 30px 20px;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            color: var(--theme-primary, #f44336);
+            margin: 0;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+        }
+
+        .close-button:hover {
+            color: var(--theme-primary, #f44336);
+        }
+
+        .history-item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            font-size: 13px;
+            border-left: 3px solid var(--theme-primary, #f44336);
+        }
+
+        .history-time {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .status-tag.available {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .status-tag.unavailable {
+            background-color: #ffcccc;
+            color: #c62828;
+        }
+
+        .status-tag.error {
+            background-color: #ffe0b2;
+            color: #e65100;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🏨 東橫 INN 空房監控系統</h1>
+            <p>自動監控房間可用性,有空房立即通知</p>
+        </header>
+
+        <div id="authMessage" style="display: none;" class="alert alert-error">
+            您無權存取此系統。請聯繫系統管理員。
+        </div>
+
+        <div id="mainContent">
+            <div class="main-grid">
+                <!-- 提醒建立表單 -->
+                <div class="panel">
+                    <h2>新增提醒</h2>
+                    <form id="reminderForm">
+                        <div class="form-group">
+                            <label for="region">地區 - 都道府縣 *</label>
+                            <select id="region" required>
+                                <option value="">請選擇地區...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="branch">東橫 INN 分店 *</label>
+                            <select id="branch" required disabled>
+                                <option value="">請先選擇地區...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>房型選擇 * (可複選)</label>
+                            <div class="checkbox-group" id="roomTypesContainer">
+                                <!-- 動態產生 -->
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adults">成人人數 *</label>
+                            <input type="number" id="adults" min="1" max="4" value="2" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rooms">房間數 *</label>
+                            <input type="number" id="rooms" min="1" max="4" value="1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="checkInDate">入住日期 *</label>
+                            <input type="date" id="checkInDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="checkOutDate">退房日期 *</label>
+                            <input type="date" id="checkOutDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="startTime">提醒開始時間 *</label>
+                            <input type="datetime-local" id="startTime" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="endTime">提醒結束時間 *</label>
+                            <input type="datetime-local" id="endTime" required>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit" class="btn-primary">建立提醒</button>
+                            <button type="reset" class="btn-secondary">清空表單</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 提醒清單 -->
+                <div class="panel">
+                    <h2>已排程的提醒</h2>
+                    <div id="reminderListContainer" class="reminder-list">
+                        <div class="loading">正在載入提醒清單...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 歷史記錄模態窗 -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>檢查歷史</h3>
+                <button type="button" class="close-button" onclick="closeHistoryModal()">×</button>
+            </div>
+            <div id="historyContent">
+                <div class="loading">正在載入歷史記錄...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域狀態
+        let branches = [];
+        let roomTypes = [];
+        let reminders = [];
+
+        /**
+         * 隨機選擇並套用配色主題
+         */
+        function applyRandomTheme() {
+            const themes = [
+                { // 1: 科技藍
+                    primary: '#1e88e5',
+                    primaryDark: '#1565c0',
+                    light: '#e3f2fd',
+                    shadow: 'rgba(30, 136, 229, 0.3)'
+                },
+                { // 2: 溫暖珊瑚
+                    primary: '#ff7f50',
+                    primaryDark: '#ff6347',
+                    light: '#ffe4e1',
+                    shadow: 'rgba(255, 127, 80, 0.3)'
+                },
+                { // 3: 櫻花粉
+                    primary: '#ffb7c5',
+                    primaryDark: '#e91e63',
+                    light: '#fff5f7',
+                    shadow: 'rgba(233, 30, 99, 0.3)'
+                },
+                { // 4: 陽光黃
+                    primary: '#ffc107',
+                    primaryDark: '#ffa000',
+                    light: '#fff9e6',
+                    shadow: 'rgba(255, 193, 7, 0.3)'
+                },
+                { // 5: 清新薄荷
+                    primary: '#26a69a',
+                    primaryDark: '#00897b',
+                    light: '#e0f2f1',
+                    shadow: 'rgba(38, 166, 154, 0.3)'
+                },
+                { // 6: 深紫羅蘭
+                    primary: '#8e44ad',
+                    primaryDark: '#6c3483',
+                    light: '#f4ecf7',
+                    shadow: 'rgba(142, 68, 173, 0.3)'
+                },
+                { // 7: 翡翠綠
+                    primary: '#16a085',
+                    primaryDark: '#117a65',
+                    light: '#e8f8f5',
+                    shadow: 'rgba(22, 160, 133, 0.3)'
+                },
+                { // 8: 酒紅色
+                    primary: '#a52a2a',
+                    primaryDark: '#8b0000',
+                    light: '#ffe6e6',
+                    shadow: 'rgba(165, 42, 42, 0.3)'
+                },
+                { // 9: 活力橙
+                    primary: '#f77f00',
+                    primaryDark: '#d62828',
+                    light: '#fff3e0',
+                    shadow: 'rgba(247, 127, 0, 0.3)'
+                },
+                { // 10: 湖水綠
+                    primary: '#00b4d8',
+                    primaryDark: '#0077b6',
+                    light: '#e0f7fa',
+                    shadow: 'rgba(0, 180, 216, 0.3)'
+                },
+                { // 11: 深海軍藍
+                    primary: '#003d5c',
+                    primaryDark: '#002840',
+                    light: '#e0f2f7',
+                    shadow: 'rgba(0, 61, 92, 0.3)'
+                },
+                { // 12: 天空藍
+                    primary: '#29b6f6',
+                    primaryDark: '#0277bd',
+                    light: '#e1f5fe',
+                    shadow: 'rgba(2, 119, 189, 0.3)'
+                },
+                { // 13: 玫瑰金
+                    primary: '#e0afa0',
+                    primaryDark: '#b76e79',
+                    light: '#fef5f5',
+                    shadow: 'rgba(183, 110, 121, 0.3)'
+                },
+                { // 14: 湛藍
+                    primary: '#1976d2',
+                    primaryDark: '#0d47a1',
+                    light: '#e3f2fd',
+                    shadow: 'rgba(25, 118, 210, 0.3)'
+                },
+                { // 15: 摩卡棕
+                    primary: '#6f4e37',
+                    primaryDark: '#5a3d2b',
+                    light: '#f5ebe0',
+                    shadow: 'rgba(111, 78, 55, 0.3)'
+                }
+            ];
+
+            // 隨機選擇一個主題
+            const theme = themes[Math.floor(Math.random() * themes.length)];
+
+            // 設定 CSS 變數
+            document.documentElement.style.setProperty('--theme-primary', theme.primary);
+            document.documentElement.style.setProperty('--theme-primary-dark', theme.primaryDark);
+            document.documentElement.style.setProperty('--theme-light', theme.light);
+            document.documentElement.style.setProperty('--theme-shadow', theme.shadow);
+        }
+
+        /**
+         * 初始化頁面
+         */
+        async function initPage() {
+            // 先套用隨機主題
+            applyRandomTheme();
+
+            try {
+                // 檢查使用者權限
+                // (第 5.2 階段由後端實作)
+
+                // 載入分店清單
+                await loadBranches();
+
+                // 載入房型選項
+                await loadRoomTypes();
+
+                // 載入提醒清單
+                await loadReminders();
+
+                // 設定日期選擇器最小值
+                setupDatePickers();
+
+                // 綁定事件
+                document.getElementById("reminderForm").addEventListener("submit", handleFormSubmit);
+                document.getElementById("checkInDate").addEventListener("change", updateCheckOutMinDate);
+                document.getElementById("checkOutDate").addEventListener("change", validateCheckOutDate);
+            } catch (error) {
+                console.error("初始化失敗:", error);
+            }
+        }
+
+        /**
+         * 載入分店清單
+         */
+        async function loadBranches() {
+            return new Promise((resolve, reject) => {
+                google.script.run.withSuccessHandler((data) => {
+                    branches = data;
+                    populateRegionSelect();
+                    resolve();
+                }).withFailureHandler((error) => {
+                    console.error("載入分店失敗:", error);
+                    reject(error);
+                }).getBranchOptions();
+            });
+        }
+
+        /**
+         * 填入地區下拉選單
+         */
+        function populateRegionSelect() {
+            const regionSelect = document.getElementById("region");
+            regionSelect.innerHTML = '<option value="">請選擇地區...</option>';
+
+            // 依地區和都道府縣分組
+            const groupedBranches = {};
+            branches.forEach((branch) => {
+                const region = branch.region || '其他';
+                const prefecture = branch.prefecture || '未分類';
+                const key = `${region}|${prefecture}`;
+
+                if (!groupedBranches[key]) {
+                    groupedBranches[key] = {
+                        region: region,
+                        prefecture: prefecture,
+                        branches: []
+                    };
+                }
+                groupedBranches[key].branches.push(branch);
+            });
+
+            // 建立選項並排序
+            Object.keys(groupedBranches).sort((a, b) => {
+                const [regionA, prefectureA] = a.split('|');
+                const [regionB, prefectureB] = b.split('|');
+                if (regionA !== regionB) {
+                    return regionA.localeCompare(regionB, 'zh-TW');
+                }
+                return prefectureA.localeCompare(prefectureB, 'zh-TW');
+            }).forEach((key) => {
+                const group = groupedBranches[key];
+                const option = document.createElement("option");
+                option.value = key;
+                option.textContent = `${group.region} - ${group.prefecture}`;
+                regionSelect.appendChild(option);
+            });
+
+            // 監聽地區選擇變化
+            regionSelect.addEventListener('change', function () {
+                populateBranchSelect(this.value);
+            });
+        }
+
+        /**
+         * 填入分店下拉選單
+         */
+        function populateBranchSelect(regionKey) {
+            const branchSelect = document.getElementById("branch");
+
+            if (!regionKey) {
+                branchSelect.innerHTML = '<option value="">請先選擇地區...</option>';
+                branchSelect.disabled = true;
+                return;
+            }
+
+            branchSelect.disabled = false;
+            branchSelect.innerHTML = '<option value="">請選擇分店...</option>';
+
+            const [region, prefecture] = regionKey.split('|');
+
+            // 篩選並排序分店
+            const filteredBranches = branches
+                .filter(branch => branch.region === region && branch.prefecture === prefecture)
+                .sort((a, b) => a.name.localeCompare(b.name, 'zh-TW'));
+
+            filteredBranches.forEach((branch) => {
+                const option = document.createElement("option");
+                option.value = branch.code;
+                option.textContent = branch.name;
+                branchSelect.appendChild(option);
+            });
+        }
+
+        /**
+         * 載入房型選項
+         */
+        async function loadRoomTypes() {
+            return new Promise((resolve, reject) => {
+                google.script.run.withSuccessHandler((data) => {
+                    roomTypes = data;
+                    populateRoomTypes();
+                    resolve();
+                }).withFailureHandler((error) => {
+                    console.error("載入房型失敗:", error);
+                    reject(error);
+                }).getRoomTypeOptions();
+            });
+        }
+
+        /**
+         * 填入房型複選框
+         */
+        function populateRoomTypes() {
+            const container = document.getElementById("roomTypesContainer");
+            container.innerHTML = "";
+            roomTypes.forEach((roomType) => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "checkbox-item";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = roomType.code;
+                checkbox.name = "roomType";
+                checkbox.id = `roomType_${roomType.code}`;
+
+                const label = document.createElement("label");
+                label.htmlFor = `roomType_${roomType.code}`;
+                label.textContent = roomType.name;
+
+                wrapper.appendChild(checkbox);
+                wrapper.appendChild(label);
+                container.appendChild(wrapper);
+            });
+        }
+
+        /**
+         * 設定日期選擇器最小值
+         */
+        function setupDatePickers() {
+            const today = new Date();
+            const checkInInput = document.getElementById("checkInDate");
+            const checkOutInput = document.getElementById("checkOutDate");
+            const startTimeInput = document.getElementById("startTime");
+            const endTimeInput = document.getElementById("endTime");
+
+            // 設定最小日期為今天
+            const todayStr = formatDate(today);
+            checkInInput.min = todayStr;
+            checkOutInput.min = todayStr;
+
+            // 設定預設值為明天和後天
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dayAfterTomorrow = new Date(tomorrow);
+            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
+            checkInInput.value = formatDate(tomorrow);
+            checkOutInput.value = formatDate(dayAfterTomorrow);
+
+            // 設定提醒時間預設值為現在和一週後
+            const now = new Date();
+            const oneWeekLater = new Date(now);
+            oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+
+            // 格式化為 datetime-local 格式 (YYYY-MM-DDTHH:MM)
+            const formatDateTimeLocal = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            startTimeInput.value = formatDateTimeLocal(now);
+            endTimeInput.value = formatDateTimeLocal(oneWeekLater);
+
+            updateCheckOutMinDate();
+        }
+
+        /**
+         * 入住日期變更時,更新退房日期最小值
+         */
+        function updateCheckOutMinDate() {
+            const checkInInput = document.getElementById("checkInDate");
+            const checkOutInput = document.getElementById("checkOutDate");
+
+            if (checkInInput.value) {
+                const checkInDate = new Date(checkInInput.value + "T00:00:00");
+                const minCheckOutDate = new Date(checkInDate);
+                minCheckOutDate.setDate(minCheckOutDate.getDate() + 1);
+                checkOutInput.min = formatDate(minCheckOutDate);
+
+                // 如果退房日期早於最小值,自動調整
+                if (checkOutInput.value < checkOutInput.min) {
+                    checkOutInput.value = checkOutInput.min;
+                }
+            }
+        }
+
+        /**
+         * 驗證退房日期是否有效
+         */
+        function validateCheckOutDate() {
+            const checkInInput = document.getElementById("checkInDate");
+            const checkOutInput = document.getElementById("checkOutDate");
+
+            if (checkInInput.value && checkOutInput.value) {
+                const checkInDate = new Date(checkInInput.value + "T00:00:00");
+                const checkOutDate = new Date(checkOutInput.value + "T00:00:00");
+
+                if (checkOutDate <= checkInDate) {
+                    showAlert("退房日期必須至少比入住日期晚 1 天", "error");
+                    // 自動調整為入住日期 + 1 天
+                    const minCheckOutDate = new Date(checkInDate);
+                    minCheckOutDate.setDate(minCheckOutDate.getDate() + 1);
+                    checkOutInput.value = formatDate(minCheckOutDate);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * 格式化日期為 YYYY-MM-DD
+         */
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        /**
+         * 載入提醒清單
+         */
+        async function loadReminders() {
+            return new Promise((resolve, reject) => {
+                google.script.run.withSuccessHandler((data) => {
+                    console.log('載入提醒資料:', data);
+                    reminders = data;
+                    displayReminders();
+                    resolve();
+                }).withFailureHandler((error) => {
+                    console.error("載入提醒失敗:", error);
+                    showAlert("載入提醒清單失敗", "error");
+                    reject(error);
+                }).getReminderList();
+            });
+        }
+
+        /**
+         * 顯示提醒清單
+         */
+        function displayReminders() {
+            const container = document.getElementById("reminderListContainer");
+
+            // 確保 reminders 是陣列
+            if (!reminders || !Array.isArray(reminders)) {
+                reminders = [];
+            }
+
+            console.log('顯示提醒:', reminders.length, '筆');
+
+            if (reminders.length === 0) {
+                container.innerHTML =
+                    '<div class="empty-state">📋 目前沒有排程的提醒<br><small>新增一個開始監控吧！</small></div>';
+                return;
+            }
+
+            // 依入住日期排序（近的在前）
+            const sortedReminders = [...reminders].sort((a, b) => {
+                const dateA = new Date(a.checkInDate);
+                const dateB = new Date(b.checkInDate);
+                return dateA - dateB;
+            });
+
+            container.innerHTML = "";
+            sortedReminders.forEach((reminder) => {
+                const reminderUuid = reminder.uuid;
+                if (!reminderUuid) {
+                    console.warn('提醒缺少 UUID，跳過顯示:', reminder);
+                    return;
+                }
+                const isExpired = isDateExpired(reminder.checkOutDate);
+                const card = document.createElement("div");
+                card.className = `reminder-card ${reminder.reminderStatus === "暫停" ? "paused" : ""}`;
+
+                // 取得房型名稱（優先使用 reminder 中的 roomTypeName）
+                const roomTypeName = reminder.roomTypeName ||
+                    roomTypes.find((rt) => rt.code == reminder.roomTypeCode)?.name ||
+                    `房型 ${reminder.roomTypeCode}`;
+
+                // 格式化時間顯示（本地化格式）
+                const formatDateTime = (timeStr) => {
+                    if (!timeStr) return '';
+
+                    try {
+                        // 如果 timeStr 包含完整日期時間 (2025-01-15T09:00)
+                        if (timeStr.includes('T')) {
+                            const dt = new Date(timeStr);
+                            if (isNaN(dt.getTime())) return timeStr;
+                            return dt.toLocaleString('zh-TW', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
+                        }
+
+                        // 如果只有時間 (HH:MM)
+                        return timeStr;
+                    } catch (e) {
+                        return timeStr || '';
+                    }
+                };
+
+                card.innerHTML = `
+          <div class="reminder-card-header">
+            <div>
+              <div class="reminder-card-title">${reminder.branchName || '未知分店'}</div>
+              <div class="reminder-card-subtitle">${roomTypeName}</div>
+            </div>
+            <span class="reminder-status-badge ${reminder.reminderStatus === "暫停" ? "paused" : ""}">
+              ${reminder.reminderStatus === "暫停" ? "⏸ 暫停" : "▶️ 啟用"}
+            </span>
+          </div>
+          
+          <div class="reminder-card-body">
+            <div class="reminder-detail">
+              <span class="reminder-detail-icon">📅</span>
+              <span>${reminder.checkInDate} → ${reminder.checkOutDate}</span>
+            </div>
+            <div class="reminder-detail">
+              <span class="reminder-detail-icon">👥</span>
+              <span>${reminder.adults || 1} 位成人 · ${reminder.rooms || 1} 間房</span>
+            </div>
+            <div class="reminder-detail">
+              <span class="reminder-detail-icon">🕐</span>
+              <span>${formatDateTime(reminder.startTime)} ~ ${formatDateTime(reminder.endTime)}</span>
+            </div>
+            ${isExpired ? '<div class="reminder-expired">⚠️ 此提醒已過期</div>' : ""}
+          </div>
+          
+          <div class="reminder-card-actions">
+                        <button type="button" class="btn-small btn-secondary" onclick="toggleReminderStatus('${reminderUuid}')">
+              ${reminder.reminderStatus === "暫停" ? "啟用" : "暫停"}
+            </button>
+                        <button type="button" class="btn-small btn-secondary" onclick="viewHistory('${reminderUuid}')">
+              歷史
+            </button>
+                        <button type="button" class="btn-small btn-primary" onclick="deleteReminder('${reminderUuid}')">
+              刪除
+            </button>
+          </div>
+        `;
+
+                container.appendChild(card);
+            });
+        }
+
+        /**
+         * 檢查日期是否已過期
+         */
+        function isDateExpired(dateStr) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const checkDate = new Date(dateStr + "T00:00:00");
+            return checkDate < today;
+        }
+
+        /**
+         * 表單提交處理
+         */
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            try {
+                // 驗證退房日期
+                if (!validateCheckOutDate()) {
+                    return;
+                }
+
+                // 驗證房型選擇
+                const selectedRoomTypes = Array.from(
+                    document.querySelectorAll('input[name="roomType"]:checked')
+                ).map((cb) => ({
+                    code: cb.value.toString(), // 轉為字串
+                    name: roomTypes.find((rt) => rt.code == cb.value)?.name,
+                }));
+
+                if (selectedRoomTypes.length === 0) {
+                    showAlert("請至少選擇一個房型", "error");
+                    return;
+                }
+
+                // 收集表單資料（全部轉為字串）
+                const formData = {
+                    branchCode: document.getElementById("branch").value,
+                    branchName: branches.find((b) => b.code === document.getElementById("branch").value)?.name,
+                    roomTypes: selectedRoomTypes,
+                    adults: document.getElementById("adults").value.toString(),
+                    rooms: document.getElementById("rooms").value.toString(),
+                    checkInDate: document.getElementById("checkInDate").value,
+                    checkOutDate: document.getElementById("checkOutDate").value,
+                    startTime: document.getElementById("startTime").value,
+                    endTime: document.getElementById("endTime").value,
+                };
+
+                console.log('開始提交表單:', formData);
+
+                // 提交到後端（成功後重新載入提醒列表）
+                google.script.run
+                    .withSuccessHandler((result) => {
+                        console.log('提交成功，重新載入提醒列表');
+                        showAlert("✅ 提醒已建立", "success");
+                        // 重新載入提醒列表而不是整個頁面
+                        loadReminders();
+                        // 重置表單
+                        document.getElementById("reminderForm").reset();
+                    })
+                    .withFailureHandler((error) => {
+                        console.error('提交失敗:', error);
+                        showAlert(`❌ 提交失敗: ${error.message || error}`, "error");
+                    })
+                    .submitReminder(formData);
+            } catch (error) {
+                showAlert(`表單驗證失敗: ${error.message}`, "error");
+                console.error(error);
+            }
+        }
+
+        /**
+         * 切換提醒狀態
+         */
+        async function toggleReminderStatus(reminderUuid) {
+            const reminder = reminders.find((item) => item.uuid === reminderUuid);
+            if (!reminder) {
+                console.error('找不到提醒，UUID:', reminderUuid);
+                showAlert('找不到提醒資料，請重新整理頁面', 'error');
+                return;
+            }
+            const newStatus = reminder.reminderStatus === "暫停" ? "啟用" : "暫停";
+
+            console.log(`切換提醒狀態: UUID=${reminderUuid}, 目前狀態=${reminder.reminderStatus}, 新狀態=${newStatus}`);
+
+            google.script.run.withSuccessHandler(() => {
+                console.log('狀態更新成功，重新載入提醒清單');
+                showAlert(`已${newStatus === "暫停" ? "暫停" : "啟用"}提醒`, "success");
+                // 先更新本地狀態，確保即時反映
+                reminder.reminderStatus = newStatus;
+                // 然後重新載入以確保資料同步
+                loadReminders();
+            }).withFailureHandler((error) => {
+                console.error('狀態更新失敗:', error);
+                showAlert(`更新失敗: ${error}`, "error");
+            }).toggleReminderStatus(reminderUuid, newStatus);
+        }
+
+        /**
+         * 刪除提醒
+         */
+        function deleteReminder(reminderUuid) {
+            if (!confirm("確定要刪除此提醒嗎？")) {
+                return;
+            }
+
+            const reminder = reminders.find((item) => item.uuid === reminderUuid);
+            if (!reminder) {
+                console.error('找不到提醒，UUID:', reminderUuid);
+                showAlert('找不到提醒資料，請重新整理頁面', 'error');
+                return;
+            }
+
+            google.script.run.withSuccessHandler(() => {
+                showAlert("提醒已刪除", "success");
+                loadReminders();
+            }).withFailureHandler((error) => {
+                showAlert(`刪除失敗: ${error}`, "error");
+            }).deleteReminder(reminderUuid);
+        }
+
+        /**
+         * 檢視歷史記錄
+         */
+        /**
+         * 檢視歷史記錄
+         */
+        function viewHistory(reminderUuid) {
+            const reminder = reminders.find((item) => item.uuid === reminderUuid);
+            if (!reminder) {
+                console.error('找不到提醒，UUID:', reminderUuid);
+                showAlert('找不到提醒資料，請重新整理頁面', 'error');
+                return;
+            }
+            console.log('查看歷史記錄 - 提醒 UUID:', reminderUuid, '對應提醒:', reminder);
+            document.getElementById("historyModal").style.display = "block";
+            document.getElementById("historyContent").innerHTML = '<div class="loading">正在載入...</div>';
+
+            console.log(`查看歷史記錄: UUID=${reminder.uuid}`);
+
+            google.script.run.withSuccessHandler((history) => {
+                const historyRecords = Array.isArray(history) ? history : [];
+                console.log('取得歷史資料:', historyRecords);
+
+                if (historyRecords.length === 0) {
+                    document.getElementById("historyContent").innerHTML =
+                        '<div class="empty-state">尚無檢查記錄</div>';
+                    return;
+                }
+
+                let html = "";
+                historyRecords.forEach((record) => {
+                    const statusClass = record.status === "有空房" ? "available" : record.status === "無空房" ? "unavailable" : "error";
+                    html += `
+            <div class="history-item">
+              <div class="history-time">${new Date(record.checkTime).toLocaleString("zh-TW")}</div>
+              檢查結果: <span class="status-tag ${statusClass}">${record.status}</span>
+              ${record.notificationSent ? "✉️ 已通知" : ""}
+              ${record.errorMessage ? `<br>錯誤: ${record.errorMessage}` : ""}
+            </div>
+          `;
+                });
+                document.getElementById("historyContent").innerHTML = html;
+            }).withFailureHandler((error) => {
+                console.error('載入歷史失敗:', error);
+                document.getElementById("historyContent").innerHTML =
+                    `<div class="alert alert-error">載入失敗: ${error}</div>`;
+            }).getCheckHistoryByUuid(reminder.uuid);
+        }
+
+        /**
+         * 關閉歷史記錄模態窗
+         */
+        function closeHistoryModal() {
+            document.getElementById("historyModal").style.display = "none";
+        }
+
+        /**
+         * 顯示提示訊息
+         */
+        function showAlert(message, type = "info") {
+            // 簡單實作,可改為 toast 通知
+            const alertDiv = document.createElement("div");
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+
+            const container = document.querySelector(".container");
+
+            if (container) {
+                // 使用 prepend 更安全,直接加到開頭
+                container.prepend(alertDiv);
+            } else {
+                // 如果 container 不存在,加到 body 開頭
+                document.body.prepend(alertDiv);
+            }
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener("load", initPage);
+
+        // 點擊模態窗外部關閉
+        window.addEventListener("click", (event) => {
+            const modal = document.getElementById("historyModal");
+            if (event.target === modal) {
+                closeHistoryModal();
+            }
+        });
+    </script>
+</body>
+
+</html>
