@@ -1455,6 +1455,9 @@ function addBatchReminders(batchData) {
  * 記錄檢查歷史
  * @param {string} reminderUuid 提醒 UUID
  * @param {Object} result 檢查結果
+ *
+ * 注意: 檢查歷史會在 checkAllReminders() 執行完畢後自動清理。
+ * 當總列數超過 100,000 列時,會刪除第 2 列到第 97,000 列,保留標題列和最近約 3,000 筆記錄。
  */
 function logCheckHistory(reminderUuid, result) {
     try {
@@ -2664,6 +2667,36 @@ function checkAllReminders() {
                 // 繼續處理下一個提醒
                 continue;
             }
+        }
+
+        // 自動清理檢查歷史 (如果超過 100,000 列)
+        try {
+            const checkHistorySheet = getSheet(SHEET_NAMES.checkHistory);
+            const totalRows = checkHistorySheet.getLastRow();
+
+            if (totalRows > 100000) {
+                Logger.log(
+                    `檢查歷史列數超過閾值: 檢查歷史工作表現在有 ${totalRows} 列,開始執行清理...`
+                );
+
+                // 刪除第 2 列到第 97,000 列 (保留標題列和最近約 3,000 筆記錄)
+                const rowsToDelete = 96999; // 從第 2 列開始刪除 96999 列
+                checkHistorySheet.deleteRows(2, rowsToDelete);
+
+                const remainingRows = checkHistorySheet.getLastRow();
+                Logger.log(
+                    `檢查歷史清理完成: 刪除 ${rowsToDelete} 列,保留 ${remainingRows} 列`
+                );
+            } else {
+                Logger.log(
+                    `檢查歷史工作表列數 ${totalRows} 未超過閾值,無需清理`
+                );
+            }
+        } catch (cleanupError) {
+            Logger.log(
+                `檢查歷史清理失敗: ${cleanupError.message},繼續執行主流程`
+            );
+            // 不拋出錯誤,確保清理失敗不影響主流程
         }
 
         const endTime = new Date();
