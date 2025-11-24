@@ -1,0 +1,5 @@
+.DS_Store
+
+# Clasp 設定檔（包含專案特定的 scriptId）
+.clasp.json
+.clasprc.json

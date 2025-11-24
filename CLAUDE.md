@@ -16,5 +16,4 @@ Use `@/openspec/AGENTS.md` to learn:
 Keep this managed block so 'openspec update' can refresh the instructions.
 
 總是使用繁體中文和我對談、撰寫符合 conventional commit 規範的 commit message、程式碼註解和文件內容。
-
 <!-- OPENSPEC:END -->

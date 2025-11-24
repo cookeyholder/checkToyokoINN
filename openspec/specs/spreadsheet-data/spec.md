@@ -152,7 +152,7 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **AND** 如不符合應回傳錯誤訊息: "退房日期必須至少比入住日期晚 1 天"
 
 ### Requirement: 檢查歷史記錄
-系統 SHALL 在「檢查歷史」工作表中記錄每次房間檢查的結果。
+系統 SHALL 在「檢查歷史」工作表中記錄每次房間檢查的結果,並自動清理過多的歷史記錄以維持效能。
 
 #### Scenario: 檢查歷史欄位格式
 - **WHEN** 記錄檢查歷史
@@ -178,11 +178,19 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **THEN** 系統應能根據提醒 ID 過濾並回傳相關記錄
 - **AND** 按時間倒序排列 (最新的在前)
 
-#### Scenario: 歷史記錄保留策略
-- **WHEN** 系統運作一段時間後
-- **THEN** 檢查歷史記錄應永久保存
-- **AND** 不自動清理或刪除舊記錄
-- **AND** 由使用者或管理員手動決定是否清理
+#### Scenario: 自動清理歷史記錄
+- **WHEN** `checkAllReminders()` 完成所有提醒檢查並寫入檢查歷史後
+- **THEN** 系統應檢查「檢查歷史」工作表的總列數 (包含標題列)
+- **AND** 如果總列數超過 100,000 列
+- **THEN** 應刪除第 2 列到第 97,000 列的資料
+- **AND** 保留標題列 (第 1 列) 和最近的 3,000 筆記錄 (第 97,001 列到最後一列)
+- **AND** 在 Logger 中記錄清理操作: "檢查歷史清理完成: 刪除 X 列,保留 Y 列"
+
+#### Scenario: 清理操作錯誤處理
+- **WHEN** 自動清理過程中發生錯誤
+- **THEN** 系統應捕獲錯誤並記錄到 Logger
+- **AND** 不影響正常的檢查歷史寫入功能
+- **AND** 不中斷 `checkAllReminders()` 的執行
 
 ### Requirement: 網站參數設定工作表
 系統 SHALL 從「網站參數設定」工作表讀取系統運作所需的設定參數。
