@@ -183,7 +183,7 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **THEN** 系統應檢查「檢查歷史」工作表的總列數 (包含標題列)
 - **AND** 如果總列數超過 100,000 列
 - **THEN** 應刪除第 2 列到第 97,000 列的資料
-- **AND** 保留標題列 (第 1 列) 和最近的 3,000 筆記錄 (第 97,001 列到最後一列)
+- **AND** 保留標題列 (第 1 列) 和最近約 3,000 筆記錄 (第 97,001 列到最後一列)
 - **AND** 在 Logger 中記錄清理操作: "檢查歷史清理完成: 刪除 X 列,保留 Y 列"
 
 #### Scenario: 清理操作錯誤處理
