@@ -26,8 +26,8 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **AND** 資料列格式為:
   - 欄 A: 分店名稱 (例如: "東京新宿店", "大阪梅田店")
   - 欄 B: 分店編號 (例如: "00066", "00123")
-  - 欄 C: 地區 (例如: "關東", "關西")
-  - 欄 D: 都道府縣 (例如: "東京都", "大阪府")
+  - 欄 C: 地區 (例如: "關東", "關西", "日本以外")
+  - 欄 D: 都道府縣 (例如: "東京都", "大阪府", "韓國")
 
 #### Scenario: 載入分店選項
 - **WHEN** 網頁介面需要顯示分店下拉選單
@@ -40,6 +40,11 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **WHEN** 儲存新提醒時
 - **THEN** 系統應驗證分店編號是否存在於「東橫INN分店」工作表中
 - **AND** 如不存在應回傳清楚的錯誤訊息
+
+#### Scenario: 包含日本以外的分店
+- **WHEN** 系統完成分店資訊更新
+- **THEN** 「東橫INN分店」工作表應包含日本境內與日本以外的所有分店資料
+- **AND** 其「地區」欄位對於日本境外的分店應為「日本以外」
 
 ### Requirement: 房型代號工作表
 系統 SHALL 從「房型代號」工作表讀取房型名稱和對應的 API 代號。
