@@ -200,7 +200,11 @@ function extractFromNextPayload(html) {
         return [];
     }
     const data = safeJsonParse(match[1]);
-    const list = data?.props?.pageProps?.trpcState?.json?.queries?.[0]?.state?.data?.list;
+    const queries = data?.props?.pageProps?.trpcState?.json?.queries;
+    const listQuery = Array.isArray(queries)
+        ? queries.find(q => q?.state?.data?.list && Array.isArray(q.state.data.list))
+        : null;
+    const list = listQuery?.state?.data?.list;
     if (!Array.isArray(list)) {
         return [];
     }
