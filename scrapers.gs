@@ -195,7 +195,7 @@ function parseWebsitePayload(html) {
 }
 
 function extractFromNextPayload(html) {
-    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+    const match = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
     if (!match) {
         return [];
     }
@@ -243,6 +243,7 @@ function extractFromNextPayload(html) {
 
     const branches = [];
     list.forEach((regionItem) => {
+        if (!regionItem) return;
         const kubun = regionItem.kubun;
         const regionName = KUBUN_TO_REGION[kubun] || "未分類";
         const sublist = Array.isArray(regionItem.list) ? regionItem.list : [];
@@ -251,7 +252,7 @@ function extractFromNextPayload(html) {
             const code = prefItem.prefecture_or_country;
             let prefectureName = "未分類";
             if (kubun === "foreign") {
-                prefectureName = COUNTRY_NAMES[code] || "日本以外";
+                prefectureName = COUNTRY_NAMES[code] || (code ? `未知國家(${code})` : "日本以外");
             } else {
                 prefectureName = PREFECTURE_NAMES[code] || "未分類";
             }
