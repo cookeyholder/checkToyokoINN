@@ -1395,9 +1395,6 @@ function addReminder(reminderData) {
         sheet.appendRow(newRow);
         const rowIndex = sheet.getLastRow();
 
-        // 確保資料立即寫入試算表
-        SpreadsheetApp.flush();
-
         Logger.log(`成功新增提醒到列 ${rowIndex}，UUID: ${uuid}`);
         return { uuid: uuid };
     } catch (error) {
@@ -1441,6 +1438,7 @@ function addBatchReminders(batchData) {
                 startTime: batchData.startTime,
                 endTime: batchData.endTime,
                 userEmail: batchData.userEmail,
+                notificationEmail: batchData.notificationEmail || "",
             };
 
             const { uuid } = addReminder(reminderData);
@@ -2771,12 +2769,22 @@ function generateBookingUrl(params) {
  * @param {string} bookingUrl 訂房 URL
  * @returns {string}
  */
+function escapeHtml(str) {
+    if (!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function generateEmailContent(reminder, bookingUrl) {
     try {
-        const checkInDate = reminder.checkInDate;
-        const checkOutDate = reminder.checkOutDate;
-        const branchName = reminder.branchName;
-        const roomTypeName = reminder.roomTypeName;
+        const checkInDate = escapeHtml(reminder.checkInDate);
+        const checkOutDate = escapeHtml(reminder.checkOutDate);
+        const branchName = escapeHtml(reminder.branchName);
+        const roomTypeName = escapeHtml(reminder.roomTypeName);
         const adults = reminder.adults;
         const rooms = reminder.rooms;
         const checkTime = new Date().toISOString();
