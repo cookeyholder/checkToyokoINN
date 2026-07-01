@@ -83,10 +83,11 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
   - 欄 I: 提醒開始時間
   - 欄 J: 提醒結束時間
   - 欄 K: 使用者 Email
-  - 欄 L: 建立時間
-  - 欄 M: 最後通知時間 (選用)
-  - 欄 N: 通知狀態 (選用)
-  - 欄 O: 提醒狀態 ("啟用"/"暫停", 預設: "啟用")
+  - 欄 L: 提醒收件 Email（通知信將寄至此地址）
+  - 欄 M: 建立時間
+  - 欄 N: 最後通知時間 (選用)
+  - 欄 O: 通知狀態 (選用)
+  - 欄 P: 提醒狀態 ("啟用"/"暫停", 預設: "啟用")
 
 #### Scenario: 讀取所有提醒
 - **WHEN** 系統需要載入提醒清單

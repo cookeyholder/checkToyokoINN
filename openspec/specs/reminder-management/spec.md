@@ -65,6 +65,8 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
   - 退房日期 (YYYY-MM-DD)
   - 提醒開始時間 (HH:MM)
   - 提醒結束時間 (HH:MM)
+  - 使用者 Email (建立提醒時自動記錄)
+  - 提醒收件 Email (使用者指定的通知收件地址)
   - 建立時間 (時間戳記)
 
 ### Requirement: 提醒狀態追蹤

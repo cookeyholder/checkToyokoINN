@@ -206,7 +206,8 @@ menuSetupTimeTrigger()
 | 退房日期 | 退房日期 (YYYY-MM-DD) |
 | 提醒開始時間 | 監控開始時間 (HH:MM) |
 | 提醒結束時間 | 監控結束時間 (HH:MM) |
-| 使用者 Email | 通知接收郵件地址 |
+| 使用者 Email | 建立提醒時自動記錄的使用者 Email |
+| 提醒收件 Email | 使用者指定的通知信收件地址 |
 | 建立時間 | 提醒建立時間戳記 |
 | 最後通知時間 | 最後一次發送通知的時間 |
 | 通知狀態 | `success` / `pending` / `failed` |

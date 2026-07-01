@@ -465,6 +465,11 @@
                             <input type="datetime-local" id="endTime" required>
                         </div>
 
+                        <div class="form-group">
+                            <label for="notificationEmail">提醒收件 Email *</label>
+                            <input type="email" id="notificationEmail" placeholder="example@email.com" required>
+                        </div>
+
                         <div class="button-group">
                             <button type="submit" class="btn-primary">建立提醒</button>
                             <button type="reset" class="btn-secondary">清空表單</button>
@@ -1038,6 +1043,13 @@
                     return;
                 }
 
+                // 驗證提醒收件 Email
+                const notificationEmail = document.getElementById("notificationEmail").value.trim();
+                if (!notificationEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notificationEmail)) {
+                    showAlert("請輸入有效的提醒收件 Email", "error");
+                    return;
+                }
+
                 // 收集表單資料（全部轉為字串）
                 const formData = {
                     branchCode: document.getElementById("branch").value,
@@ -1049,6 +1061,7 @@
                     checkOutDate: document.getElementById("checkOutDate").value,
                     startTime: document.getElementById("startTime").value,
                     endTime: document.getElementById("endTime").value,
+                    notificationEmail: notificationEmail,
                 };
 
                 console.log('開始提交表單:', formData);

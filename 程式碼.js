@@ -357,10 +357,11 @@ const COLUMN_INDICES = {
         startTime: 9, // J: 提醒開始時間
         endTime: 10, // K: 提醒結束時間
         userEmail: 11, // L: 使用者 Email
-        createdAt: 12, // M: 建立時間
-        lastNotificationTime: 13, // N: 最後通知時間
-        notificationStatus: 14, // O: 通知狀態
-        reminderStatus: 15, // P: 提醒狀態 (啟用/暫停)
+        notificationEmail: 12, // M: 提醒收件 Email
+        createdAt: 13, // N: 建立時間
+        lastNotificationTime: 14, // O: 最後通知時間
+        notificationStatus: 15, // P: 通知狀態
+        reminderStatus: 16, // Q: 提醒狀態 (啟用/暫停)
     },
 };
 
@@ -572,10 +573,11 @@ function initializeRemindersSheet() {
                 "提醒開始時間", // J
                 "提醒結束時間", // K
                 "使用者 Email", // L
-                "建立時間", // M
-                "最後通知時間", // N
-                "通知狀態", // O
-                "提醒狀態", // P
+                "提醒收件 Email", // M
+                "建立時間", // N
+                "最後通知時間", // O
+                "通知狀態", // P
+                "提醒狀態", // Q
             ];
 
             sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -607,10 +609,11 @@ function initializeRemindersSheet() {
                 120, // J: 提醒開始時間
                 120, // K: 提醒結束時間
                 200, // L: 使用者 Email
-                150, // M: 建立時間
-                150, // N: 最後通知時間
-                100, // O: 通知狀態
-                100, // P: 提醒狀態
+                200, // M: 提醒收件 Email
+                150, // N: 建立時間
+                150, // O: 最後通知時間
+                100, // P: 通知狀態
+                100, // Q: 提醒狀態
             ];
 
             for (let i = 0; i < columnWidths.length; i++) {
@@ -1281,6 +1284,9 @@ function getReminders(status, userEmail = null, includeDeleted = false) {
                 endTime:
                     rowData[COLUMN_INDICES.reminders.endTime]?.toString() || "",
                 userEmail: rowData[userEmailCol]?.toString() || "",
+                notificationEmail:
+                    rowData[COLUMN_INDICES.reminders.notificationEmail]
+                        ?.toString() || "",
                 createdAt: rowData[COLUMN_INDICES.reminders.createdAt],
                 lastNotificationTime:
                     rowData[COLUMN_INDICES.reminders.lastNotificationTime] ||
@@ -1379,6 +1385,7 @@ function addReminder(reminderData) {
             reminderData.startTime,
             reminderData.endTime,
             reminderData.userEmail,
+            reminderData.notificationEmail || "",
             formatLocalDateTime(new Date()), // 建立時間
             "", // 最後通知時間 (初始為空)
             "未通知", // 通知狀態
@@ -3066,7 +3073,8 @@ function generateEmailContent(reminder, bookingUrl) {
  */
 function sendNotification(reminder, bookingUrl) {
     try {
-        const userEmail = reminder.userEmail;
+        const userEmail =
+            reminder.notificationEmail || reminder.userEmail;
         const subject = `【東橫 INN 空房通知】${reminder.branchName} - ${reminder.checkInDate}`;
 
         // 檢查郵件地址是否有效
@@ -3199,6 +3207,7 @@ function getReminderList() {
                 notificationStatus: reminder.notificationStatus || "未通知",
                 lastNotificationTime: lastNotificationTime,
                 userEmail: reminder.userEmail || "",
+                notificationEmail: reminder.notificationEmail || "",
             };
         });
 
@@ -3242,6 +3251,7 @@ function submitReminder(formData) {
                 startTime: formData.startTime,
                 endTime: formData.endTime,
                 userEmail: userId,
+                notificationEmail: formData.notificationEmail,
                 reminderStatus: "啟用",
             };
 

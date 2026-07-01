@@ -28,6 +28,7 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
   - 退房日期 (date picker,不允許選取今天之前的日期)
   - 提醒開始時間 (時間選擇器)
   - 提醒結束時間 (時間選擇器)
+  - 提醒收件 Email (文字輸入,必填)
   - 提交按鈕
 
 #### Scenario: 分店選項從試算表載入
@@ -41,6 +42,7 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **THEN** 系統應處理選擇的房型清單
 - **AND** 為每個選擇的房型建立一筆獨立的提醒記錄
 - **AND** 所有提醒使用相同的分店、日期、時間等設定
+- **AND** 記錄使用者輸入的「提醒收件 Email」
 - **AND** 自動記錄當前使用者的 Email 地址
 - **AND** 重新載入提醒清單
 - **AND** 清空表單欄位
@@ -154,14 +156,16 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **AND** 允許選擇單一分店
 - **AND** 允許複選多個房型
 - **AND** 提供入住日期和退房日期選擇 (不展開為多天)
+- **AND** 提供提醒收件 Email 輸入欄位
 - **AND** 系統為每個選擇的房型建立獨立的提醒
 
 #### Scenario: 批次新增執行
 - **WHEN** 使用者提交批次新增表單
 - **THEN** 系統應根據選擇的房型
 - **AND** 為每個房型建立一筆提醒記錄
-- **AND** 所有提醒使用相同的分店、入住日期、退房日期、人數、時間設定
+- **AND** 所有提醒使用相同的分店、入住日期、退房日期、人數、時間、提醒收件 Email 設定
 - **AND** 所有提醒記錄當前使用者的 Email
+- **AND** 所有提醒記錄使用者輸入的「提醒收件 Email」
 - **AND** 顯示批次新增成功的訊息和建立的提醒數量
 
 #### Scenario: 批次新增複選房型範例
