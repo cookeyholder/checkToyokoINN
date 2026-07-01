@@ -166,6 +166,11 @@ function parseApiResponse(data) {
 }
 
 function parseWebsitePayload(html) {
+    const nextBranches = extractFromNextPayload(html);
+    if (nextBranches.length) {
+        Logger.log(`✓ 從 __NEXT_DATA__ 取出 ${nextBranches.length} 家分店`);
+        return nextBranches;
+    }
     const nuxtBranches = extractFromNuxtPayload(html);
     if (nuxtBranches.length) {
         Logger.log(`✓ 從 __NUXT__ 取出 ${nuxtBranches.length} 家分店`);
@@ -187,6 +192,88 @@ function parseWebsitePayload(html) {
         return markdownBranches;
     }
     return anchorBranches;
+}
+
+function extractFromNextPayload(html) {
+    const match = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!match) {
+        return [];
+    }
+    const data = safeJsonParse(match[1]);
+    const queries = data?.props?.pageProps?.trpcState?.json?.queries;
+    const listQuery = Array.isArray(queries)
+        ? queries.find(q => q?.state?.data?.list && Array.isArray(q.state.data.list))
+        : null;
+    const list = listQuery?.state?.data?.list;
+    if (!Array.isArray(list)) {
+        return [];
+    }
+
+    const KUBUN_TO_REGION = {
+        "hokkaido": "北海道",
+        "tohoku": "東北",
+        "kanto": "關東",
+        "tokai": "東海、甲信越、北陸",
+        "kinki": "近畿",
+        "cyugoku": "中國、四國",
+        "kyushu": "九州、沖繩",
+        "foreign": "日本以外"
+    };
+
+    const PREFECTURE_NAMES = {
+        1: "北海道", 2: "青森縣", 3: "岩手縣", 4: "宮城縣", 5: "秋田縣",
+        6: "山形縣", 7: "福島縣", 8: "茨城縣", 9: "栃木縣", 10: "群馬縣",
+        11: "埼玉縣", 12: "千葉縣", 13: "東京都", 14: "神奈川縣", 15: "新潟縣",
+        16: "富山縣", 17: "石川縣", 18: "福井縣", 19: "山梨縣", 20: "長野縣",
+        21: "岐阜縣", 22: "靜岡縣", 23: "愛知縣", 24: "三重縣", 25: "滋賀縣",
+        26: "京都府", 27: "大阪府", 28: "兵庫縣", 29: "奈良縣", 30: "和歌山縣",
+        31: "鳥取縣", 32: "島根縣", 33: "岡山縣", 34: "廣島縣", 35: "山口縣",
+        36: "德島縣", 37: "香川縣", 38: "愛媛縣", 39: "高知縣", 40: "福岡縣",
+        41: "佐賀縣", 42: "長崎縣", 43: "熊本縣", 44: "大分縣", 45: "宮崎縣",
+        46: "鹿兒島縣", 47: "沖繩縣"
+    };
+
+    const COUNTRY_NAMES = {
+        2: "韓國",
+        3: "蒙古",
+        4: "菲律賓",
+        5: "德國",
+        6: "法國"
+    };
+
+    const branches = [];
+    list.forEach((regionItem) => {
+        if (!regionItem) return;
+        const kubun = regionItem.kubun;
+        const regionName = KUBUN_TO_REGION[kubun] || "未分類";
+        const sublist = Array.isArray(regionItem.list) ? regionItem.list : [];
+        
+        sublist.forEach((prefItem) => {
+            const code = prefItem.prefecture_or_country;
+            let prefectureName = "未分類";
+            if (kubun === "foreign") {
+                prefectureName = COUNTRY_NAMES[code] || (code ? `未知國家(${code})` : "日本以外");
+            } else {
+                prefectureName = PREFECTURE_NAMES[code] || "未分類";
+            }
+
+            const hotels = Array.isArray(prefItem.hotels) ? prefItem.hotels : [];
+            hotels.forEach((hotel) => {
+                const hotelCode = hotel.hotelCode || hotel.code;
+                const hotelName = hotel.name;
+                if (hotelCode && hotelName) {
+                    branches.push({
+                        name: sanitizeHotelName(hotelName),
+                        code: normalizeHotelCode(hotelCode),
+                        region: regionName,
+                        prefecture: prefectureName
+                    });
+                }
+            });
+        });
+    });
+
+    return branches;
 }
 
 function extractFromNuxtPayload(html) {
@@ -557,10 +644,8 @@ function updateBranchesSheet(branches) {
         sheet.deleteRows(2, current.length - 1);
     }
 
-    // 排除「日本以外」地區的分店
-    const filteredBranches = branches.filter(
-        (branch) => branch.region !== "日本以外"
-    );
+    // 包含所有分店（含日本以外地區）
+    const filteredBranches = branches;
 
     if (filteredBranches.length > 0) {
         // 依照「地區」、「都道府縣」、「分店名稱」排序
