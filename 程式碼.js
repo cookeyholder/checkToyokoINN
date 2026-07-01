@@ -361,7 +361,7 @@ const COLUMN_INDICES = {
         createdAt: 13, // N: 建立時間
         lastNotificationTime: 14, // O: 最後通知時間
         notificationStatus: 15, // P: 通知狀態
-        reminderStatus: 16, // Q: 提醒狀態 (啟用/暫停)
+        reminderStatus: 16, // Q: 提醒狀態 (啟用/暫停/已刪除)
     },
 };
 
@@ -635,6 +635,22 @@ function initializeRemindersSheet() {
             Logger.log(`✓ 已設定「${SHEET_NAMES.reminders}」標題列`);
         } else {
             Logger.log(`「${SHEET_NAMES.reminders}」工作表已存在且有資料`);
+            
+            // 自動遷移舊版提醒工作表結構
+            if (data.length > 0 && data[0].length > 0) {
+                const headers = data[0];
+                if (!headers.includes("提醒收件 Email")) {
+                    Logger.log("⚠️ 偵測到舊版提醒工作表，開始執行自動結構遷移...");
+                    sheet.insertColumnBefore(13); // 在原建立時間(第13欄)前插入一欄
+                    sheet.getRange(1, 13).setValue("提醒收件 Email");
+                    sheet.setColumnWidth(13, 200);
+                    sheet.getRange(1, 13).setFontWeight("bold");
+                    sheet.getRange(1, 13).setBackground("#f44336");
+                    sheet.getRange(1, 13).setFontColor("#ffffff");
+                    sheet.getRange(1, 13).setHorizontalAlignment("center");
+                    Logger.log("✓ 自動結構遷移完成，已插入「提醒收件 Email」欄位。");
+                }
+            }
         }
 
         return { success: true, sheetName: SHEET_NAMES.reminders };
@@ -3086,12 +3102,12 @@ function sendNotification(reminder, bookingUrl) {
             reminder.notificationEmail &&
             validateEmailFormat(reminder.notificationEmail)
         ) {
-            userEmail = reminder.notificationEmail;
+            userEmail = reminder.notificationEmail.trim();
         } else if (
             reminder.userEmail &&
             validateEmailFormat(reminder.userEmail)
         ) {
-            userEmail = reminder.userEmail;
+            userEmail = reminder.userEmail.trim();
         }
 
         if (!userEmail) {
@@ -3483,6 +3499,9 @@ function validateReminderData(formData) {
     }
 
     // 檢查提醒收件 Email 格式
+    if (formData.notificationEmail && typeof formData.notificationEmail === "string") {
+        formData.notificationEmail = formData.notificationEmail.trim();
+    }
     if (
         !formData.notificationEmail ||
         !validateEmailFormat(formData.notificationEmail)
@@ -3561,8 +3580,12 @@ function validateTimeFormat(time) {
  * @returns {boolean} 郵件格式是否有效
  */
 function validateEmailFormat(email) {
+    if (!email || typeof email !== "string") {
+        return false;
+    }
+    const cleanEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(cleanEmail);
 }
 
 /**
