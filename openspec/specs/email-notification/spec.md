@@ -10,7 +10,8 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **WHEN** 系統檢查到某提醒有可用的禁菸空房
 - **AND** 當前時間在提醒的時間範圍內
 - **THEN** 系統應發送 Email 通知
-- **AND** 收件人為該提醒記錄中的使用者 Email
+- **AND** 收件人優先為該提醒記錄中的「提醒收件 Email」
+- **AND** 若「提醒收件 Email」為空則 fallback 到「使用者 Email」
 
 #### Scenario: 不在提醒時間範圍內
 - **WHEN** 發現空房但當前時間不在提醒範圍內
@@ -60,7 +61,7 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **AND** 繼續處理下一個提醒
 
 #### Scenario: Email 地址無效
-- **WHEN** 提醒記錄中的使用者 Email 為空值或無效
+- **WHEN** 提醒記錄中的「提醒收件 Email」與「使用者 Email」皆為空值或無效
 - **THEN** 系統應記錄警告到 Logger
 - **AND** 跳過該次通知發送
 - **AND** 在檢查歷史中記錄為錯誤

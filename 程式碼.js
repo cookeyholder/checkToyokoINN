@@ -357,10 +357,11 @@ const COLUMN_INDICES = {
         startTime: 9, // J: 提醒開始時間
         endTime: 10, // K: 提醒結束時間
         userEmail: 11, // L: 使用者 Email
-        createdAt: 12, // M: 建立時間
-        lastNotificationTime: 13, // N: 最後通知時間
-        notificationStatus: 14, // O: 通知狀態
-        reminderStatus: 15, // P: 提醒狀態 (啟用/暫停)
+        notificationEmail: 12, // M: 提醒收件 Email
+        createdAt: 13, // N: 建立時間
+        lastNotificationTime: 14, // O: 最後通知時間
+        notificationStatus: 15, // P: 通知狀態
+        reminderStatus: 16, // Q: 提醒狀態 (啟用/暫停/已刪除)
     },
 };
 
@@ -572,10 +573,11 @@ function initializeRemindersSheet() {
                 "提醒開始時間", // J
                 "提醒結束時間", // K
                 "使用者 Email", // L
-                "建立時間", // M
-                "最後通知時間", // N
-                "通知狀態", // O
-                "提醒狀態", // P
+                "提醒收件 Email", // M
+                "建立時間", // N
+                "最後通知時間", // O
+                "通知狀態", // P
+                "提醒狀態", // Q
             ];
 
             sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -607,10 +609,11 @@ function initializeRemindersSheet() {
                 120, // J: 提醒開始時間
                 120, // K: 提醒結束時間
                 200, // L: 使用者 Email
-                150, // M: 建立時間
-                150, // N: 最後通知時間
-                100, // O: 通知狀態
-                100, // P: 提醒狀態
+                200, // M: 提醒收件 Email
+                150, // N: 建立時間
+                150, // O: 最後通知時間
+                100, // P: 通知狀態
+                100, // Q: 提醒狀態
             ];
 
             for (let i = 0; i < columnWidths.length; i++) {
@@ -632,6 +635,22 @@ function initializeRemindersSheet() {
             Logger.log(`✓ 已設定「${SHEET_NAMES.reminders}」標題列`);
         } else {
             Logger.log(`「${SHEET_NAMES.reminders}」工作表已存在且有資料`);
+            
+            // 自動遷移舊版提醒工作表結構
+            if (data.length > 0 && data[0].length > 0) {
+                const headers = data[0];
+                if (!headers.includes("提醒收件 Email")) {
+                    Logger.log("⚠️ 偵測到舊版提醒工作表，開始執行自動結構遷移...");
+                    sheet.insertColumnBefore(13); // 在原建立時間(第13欄)前插入一欄
+                    sheet.getRange(1, 13).setValue("提醒收件 Email");
+                    sheet.setColumnWidth(13, 200);
+                    sheet.getRange(1, 13).setFontWeight("bold");
+                    sheet.getRange(1, 13).setBackground("#f44336");
+                    sheet.getRange(1, 13).setFontColor("#ffffff");
+                    sheet.getRange(1, 13).setHorizontalAlignment("center");
+                    Logger.log("✓ 自動結構遷移完成，已插入「提醒收件 Email」欄位。");
+                }
+            }
         }
 
         return { success: true, sheetName: SHEET_NAMES.reminders };
@@ -1281,6 +1300,9 @@ function getReminders(status, userEmail = null, includeDeleted = false) {
                 endTime:
                     rowData[COLUMN_INDICES.reminders.endTime]?.toString() || "",
                 userEmail: rowData[userEmailCol]?.toString() || "",
+                notificationEmail:
+                    rowData[COLUMN_INDICES.reminders.notificationEmail]
+                        ?.toString() || "",
                 createdAt: rowData[COLUMN_INDICES.reminders.createdAt],
                 lastNotificationTime:
                     rowData[COLUMN_INDICES.reminders.lastNotificationTime] ||
@@ -1379,6 +1401,7 @@ function addReminder(reminderData) {
             reminderData.startTime,
             reminderData.endTime,
             reminderData.userEmail,
+            reminderData.notificationEmail || "",
             formatLocalDateTime(new Date()), // 建立時間
             "", // 最後通知時間 (初始為空)
             "未通知", // 通知狀態
@@ -1387,9 +1410,6 @@ function addReminder(reminderData) {
 
         sheet.appendRow(newRow);
         const rowIndex = sheet.getLastRow();
-
-        // 確保資料立即寫入試算表
-        SpreadsheetApp.flush();
 
         Logger.log(`成功新增提醒到列 ${rowIndex}，UUID: ${uuid}`);
         return { uuid: uuid };
@@ -1434,6 +1454,7 @@ function addBatchReminders(batchData) {
                 startTime: batchData.startTime,
                 endTime: batchData.endTime,
                 userEmail: batchData.userEmail,
+                notificationEmail: batchData.notificationEmail || "",
             };
 
             const { uuid } = addReminder(reminderData);
@@ -2764,12 +2785,22 @@ function generateBookingUrl(params) {
  * @param {string} bookingUrl 訂房 URL
  * @returns {string}
  */
+function escapeHtml(str) {
+    if (!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function generateEmailContent(reminder, bookingUrl) {
     try {
-        const checkInDate = reminder.checkInDate;
-        const checkOutDate = reminder.checkOutDate;
-        const branchName = reminder.branchName;
-        const roomTypeName = reminder.roomTypeName;
+        const checkInDate = escapeHtml(reminder.checkInDate);
+        const checkOutDate = escapeHtml(reminder.checkOutDate);
+        const branchName = escapeHtml(reminder.branchName);
+        const roomTypeName = escapeHtml(reminder.roomTypeName);
         const adults = reminder.adults;
         const rooms = reminder.rooms;
         const checkTime = new Date().toISOString();
@@ -3066,14 +3097,29 @@ function generateEmailContent(reminder, bookingUrl) {
  */
 function sendNotification(reminder, bookingUrl) {
     try {
-        const userEmail = reminder.userEmail;
-        const subject = `【東橫 INN 空房通知】${reminder.branchName} - ${reminder.checkInDate}`;
-
-        // 檢查郵件地址是否有效
-        if (!userEmail || userEmail.indexOf("@") === -1) {
-            Logger.log(`郵件地址無效: ${userEmail}`);
-            throw new Error(`郵件地址無效: ${userEmail}`);
+        let userEmail = "";
+        if (
+            reminder.notificationEmail &&
+            validateEmailFormat(reminder.notificationEmail)
+        ) {
+            userEmail = reminder.notificationEmail.trim();
+        } else if (
+            reminder.userEmail &&
+            validateEmailFormat(reminder.userEmail)
+        ) {
+            userEmail = reminder.userEmail.trim();
         }
+
+        if (!userEmail) {
+            Logger.log(
+                `郵件地址無效 (notificationEmail: ${reminder.notificationEmail}, userEmail: ${reminder.userEmail})`
+            );
+            throw new Error(
+                `郵件地址無效: 提醒收件 Email 與使用者 Email 皆無效`
+            );
+        }
+
+        const subject = `【東橫 INN 空房通知】${reminder.branchName} - ${reminder.checkInDate}`;
 
         const htmlContent = generateEmailContent(reminder, bookingUrl);
 
@@ -3199,6 +3245,7 @@ function getReminderList() {
                 notificationStatus: reminder.notificationStatus || "未通知",
                 lastNotificationTime: lastNotificationTime,
                 userEmail: reminder.userEmail || "",
+                notificationEmail: reminder.notificationEmail || "",
             };
         });
 
@@ -3242,6 +3289,7 @@ function submitReminder(formData) {
                 startTime: formData.startTime,
                 endTime: formData.endTime,
                 userEmail: userId,
+                notificationEmail: formData.notificationEmail,
                 reminderStatus: "啟用",
             };
 
@@ -3450,6 +3498,17 @@ function validateReminderData(formData) {
         throw new Error("請至少選擇一個房型");
     }
 
+    // 檢查提醒收件 Email 格式
+    if (formData.notificationEmail && typeof formData.notificationEmail === "string") {
+        formData.notificationEmail = formData.notificationEmail.trim();
+    }
+    if (
+        !formData.notificationEmail ||
+        !validateEmailFormat(formData.notificationEmail)
+    ) {
+        throw new Error("提醒收件 Email 格式無效");
+    }
+
     // 檢查日期有效性
     validateDates(formData.checkInDate, formData.checkOutDate);
 
@@ -3521,8 +3580,12 @@ function validateTimeFormat(time) {
  * @returns {boolean} 郵件格式是否有效
  */
 function validateEmailFormat(email) {
+    if (!email || typeof email !== "string") {
+        return false;
+    }
+    const cleanEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(cleanEmail);
 }
 
 /**
