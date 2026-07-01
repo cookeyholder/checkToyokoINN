@@ -387,6 +387,48 @@ function formatDateValue(value) {
     return value.toString();
 }
 
+/**
+ * 根據試算表標題列名稱動態解析欄位索引
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - 工作表物件
+ * @returns {Object} 欄位名稱對應的索引物件
+ */
+function getColumnIndices(sheet) {
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    const headerMapping = [
+        { key: "uuid", name: "UUID" },
+        { key: "branchCode", name: "分店編號" },
+        { key: "branchName", name: "分店名稱" },
+        { key: "roomTypeCode", name: "房型代號" },
+        { key: "roomTypeName", name: "房型名稱" },
+        { key: "adults", name: "成人人數" },
+        { key: "rooms", name: "房間數" },
+        { key: "checkInDate", name: "入住日期" },
+        { key: "checkOutDate", name: "退房日期" },
+        { key: "startTime", name: "提醒開始時間" },
+        { key: "endTime", name: "提醒結束時間" },
+        { key: "userEmail", name: "使用者 Email" },
+        { key: "notificationEmail", name: "提醒收件 Email" },
+        { key: "createdAt", name: "建立時間" },
+        { key: "lastNotificationTime", name: "最後通知時間" },
+        { key: "notificationStatus", name: "通知狀態" },
+        { key: "reminderStatus", name: "提醒狀態" },
+    ];
+
+    const indices = {};
+    for (const entry of headerMapping) {
+        const index = headers.indexOf(entry.name);
+        if (index === -1) {
+            throw new Error(
+                `提醒清單工作表缺少必要的標題列「${entry.name}」，請確認試算表結構是否正確`
+            );
+        }
+        indices[entry.key] = index;
+    }
+
+    return indices;
+}
+
 // ==================== 試算表存取函式 ====================
 
 /**
@@ -1235,27 +1277,24 @@ function getReminders(status, userEmail = null, includeDeleted = false) {
             return [];
         }
 
-        const reminders = [];
-        const userEmailCol = COLUMN_INDICES.reminders.userEmail;
-        const statusCol = COLUMN_INDICES.reminders.reminderStatus;
-        const branchCodeCol = COLUMN_INDICES.reminders.branchCode;
+        const indices = getColumnIndices(sheet);
 
         // 從第 2 列開始（跳過標題）
         for (let i = 1; i < data.length; i++) {
             const rowData = data[i];
 
             // 快速檢查：如果指定了 userEmail，先過濾
-            if (userEmail && rowData[userEmailCol] !== userEmail) {
+            if (userEmail && rowData[indices.userEmail] !== userEmail) {
                 continue;
             }
 
             // 快速檢查：分店編號是否存在
-            if (!rowData[branchCodeCol]) {
+            if (!rowData[indices.branchCode]) {
                 continue;
             }
 
             // 檢查狀態
-            const reminderStatus = rowData[statusCol] || "啟用";
+            const reminderStatus = rowData[indices.reminderStatus] || "啟用";
 
             // 預設排除已刪除的提醒
             if (!includeDeleted && reminderStatus === "已刪除") {
@@ -1268,48 +1307,31 @@ function getReminders(status, userEmail = null, includeDeleted = false) {
             }
 
             // 處理分店編號（移除可能的單引號前綴）
-            let branchCode = rowData[branchCodeCol].toString();
+            let branchCode = rowData[indices.branchCode].toString();
             if (branchCode.startsWith("'")) {
                 branchCode = branchCode.substring(1);
             }
 
             reminders.push({
-                uuid: rowData[COLUMN_INDICES.reminders.uuid]?.toString() || "", // UUID
+                uuid: rowData[indices.uuid]?.toString() || "",
                 branchCode: branchCode,
-                branchName:
-                    rowData[COLUMN_INDICES.reminders.branchName]?.toString() ||
-                    "",
-                roomTypeCode: parseInt(
-                    rowData[COLUMN_INDICES.reminders.roomTypeCode]
-                ),
-                roomTypeName:
-                    rowData[
-                        COLUMN_INDICES.reminders.roomTypeName
-                    ]?.toString() || "",
-                adults: parseInt(rowData[COLUMN_INDICES.reminders.adults] || 1),
-                rooms: parseInt(rowData[COLUMN_INDICES.reminders.rooms] || 1),
-                checkInDate: formatDateValue(
-                    rowData[COLUMN_INDICES.reminders.checkInDate]
-                ),
-                checkOutDate: formatDateValue(
-                    rowData[COLUMN_INDICES.reminders.checkOutDate]
-                ),
-                startTime:
-                    rowData[COLUMN_INDICES.reminders.startTime]?.toString() ||
-                    "",
-                endTime:
-                    rowData[COLUMN_INDICES.reminders.endTime]?.toString() || "",
-                userEmail: rowData[userEmailCol]?.toString() || "",
+                branchName: rowData[indices.branchName]?.toString() || "",
+                roomTypeCode: parseInt(rowData[indices.roomTypeCode]),
+                roomTypeName: rowData[indices.roomTypeName]?.toString() || "",
+                adults: parseInt(rowData[indices.adults] || 1),
+                rooms: parseInt(rowData[indices.rooms] || 1),
+                checkInDate: formatDateValue(rowData[indices.checkInDate]),
+                checkOutDate: formatDateValue(rowData[indices.checkOutDate]),
+                startTime: rowData[indices.startTime]?.toString() || "",
+                endTime: rowData[indices.endTime]?.toString() || "",
+                userEmail: rowData[indices.userEmail]?.toString() || "",
                 notificationEmail:
-                    rowData[COLUMN_INDICES.reminders.notificationEmail]
-                        ?.toString() || "",
-                createdAt: rowData[COLUMN_INDICES.reminders.createdAt],
+                    rowData[indices.notificationEmail]?.toString() || "",
+                createdAt: rowData[indices.createdAt],
                 lastNotificationTime:
-                    rowData[COLUMN_INDICES.reminders.lastNotificationTime] ||
-                    null,
+                    rowData[indices.lastNotificationTime] || null,
                 notificationStatus:
-                    rowData[COLUMN_INDICES.reminders.notificationStatus] ||
-                    "未通知",
+                    rowData[indices.notificationStatus] || "未通知",
                 reminderStatus: reminderStatus,
             });
         }
@@ -1345,9 +1367,11 @@ function findReminderRowByUuid(reminderUuid) {
         }
 
         const normalizedUuid = reminderUuid.toString().trim();
+
+        const indices = getColumnIndices(sheet);
         const uuidColumnRange = sheet.getRange(
             2,
-            COLUMN_INDICES.reminders.uuid + 1,
+            indices.uuid + 1,
             lastRow - 1,
             1
         );
@@ -2523,17 +2547,16 @@ function updateReminderNotificationStatus(
 
         const { rowIndex } = reminderRow;
         const sheet = getSheet(SHEET_NAMES.reminders);
+        const indices = getColumnIndices(sheet);
 
         // 更新通知狀態 (欄 N)
-        const notificationStatusCol =
-            COLUMN_INDICES.reminders.notificationStatus + 1;
         sheet
-            .getRange(rowIndex, notificationStatusCol)
+            .getRange(rowIndex, indices.notificationStatus + 1)
             .setValue(notificationStatus);
 
         // 更新最後通知時間 (欄 M)
         const lastNotificationTimeCol =
-            COLUMN_INDICES.reminders.lastNotificationTime + 1;
+            indices.lastNotificationTime + 1;
         sheet
             .getRange(rowIndex, lastNotificationTimeCol)
             .setValue(formatLocalDateTime(new Date(lastNotificationTime)));
@@ -3365,9 +3388,9 @@ function deleteReminder(reminderUuid) {
         }
 
         const sheet = getSheet(SHEET_NAMES.reminders);
+        const indices = getColumnIndices(sheet);
 
-        const statusCol = COLUMN_INDICES.reminders.reminderStatus + 1; // +1 因為列索引從 1 開始
-        sheet.getRange(reminderRow.rowIndex, statusCol).setValue("已刪除");
+        sheet.getRange(reminderRow.rowIndex, indices.reminderStatus + 1).setValue("已刪除");
         Logger.log(
             `已將提醒標記為刪除: UUID ${reminderUuid}, 行 ${reminderRow.rowIndex}`
         );
@@ -3406,8 +3429,8 @@ function toggleReminderStatus(reminderUuid, newStatus) {
         }
 
         const sheet = getSheet(SHEET_NAMES.reminders);
-        const statusCol = COLUMN_INDICES.reminders.reminderStatus + 1; // +1 因為列索引從 1 開始
-        sheet.getRange(reminderRow.rowIndex, statusCol).setValue(newStatus);
+        const indices = getColumnIndices(sheet);
+        sheet.getRange(reminderRow.rowIndex, indices.reminderStatus + 1).setValue(newStatus);
         Logger.log(
             `已更新提醒狀態: UUID ${reminderUuid}, 列 ${reminderRow.rowIndex}, 狀態: ${newStatus}`
         );
@@ -4816,11 +4839,13 @@ function debugUUIDs() {
         Logger.log(`工作表總列數: ${data.length}`);
         Logger.log(`標題列: ${JSON.stringify(data[0])}`);
 
+        const indices = getColumnIndices(sheet);
+
         for (let i = 1; i < data.length; i++) {
             const rowData = data[i];
-            const uuid = rowData[COLUMN_INDICES.reminders.uuid];
-            const branchName = rowData[COLUMN_INDICES.reminders.branchName];
-            const status = rowData[COLUMN_INDICES.reminders.reminderStatus];
+            const uuid = rowData[indices.uuid];
+            const branchName = rowData[indices.branchName];
+            const status = rowData[indices.reminderStatus];
 
             Logger.log(`\n列 ${i + 1}:`);
             Logger.log(
