@@ -1420,59 +1420,6 @@ function addReminder(reminderData) {
 }
 
 /**
- * 批次新增提醒
- * @param {Object} batchData 批次資料
- *   {
- *     branchCode: string,
- *     branchName: string,
- *     roomTypes: Array<{code: number, name: string}>,
- *     adults: number,
- *     rooms: number,
- *     checkInDate: string,
- *     checkOutDate: string,
- *     startTime: string,
- *     endTime: string,
- *     userEmail: string
- *   }
- * @returns {Array<number>} 新增的列號陣列
- */
-function addBatchReminders(batchData) {
-    try {
-        const createdUuids = [];
-
-        // 為每個房型建立獨立的提醒記錄
-        for (const roomType of batchData.roomTypes) {
-            const reminderData = {
-                branchCode: batchData.branchCode,
-                branchName: batchData.branchName,
-                roomTypeCode: roomType.code,
-                roomTypeName: roomType.name,
-                adults: batchData.adults,
-                rooms: batchData.rooms,
-                checkInDate: batchData.checkInDate,
-                checkOutDate: batchData.checkOutDate,
-                startTime: batchData.startTime,
-                endTime: batchData.endTime,
-                userEmail: batchData.userEmail,
-                notificationEmail: batchData.notificationEmail || "",
-            };
-
-            const { uuid } = addReminder(reminderData);
-            createdUuids.push(uuid);
-        }
-
-        // 確保所有資料都已寫入試算表
-        SpreadsheetApp.flush();
-
-        Logger.log(`批次新增完成: ${createdUuids.length} 筆提醒`);
-        return createdUuids;
-    } catch (error) {
-        Logger.log(`批次新增提醒失敗: ${error.message}`);
-        throw error;
-    }
-}
-
-/**
  * 記錄檢查歷史
  * @param {string} reminderUuid 提醒 UUID
  * @param {Object} result 檢查結果
@@ -3274,30 +3221,42 @@ function submitReminder(formData) {
         // 驗證表單資料
         validateReminderData(formData);
 
-        // 為每個房型建立提醒
-        let count = 0;
-        for (const roomType of formData.roomTypes) {
-            const reminderData = {
-                branchCode: formData.branchCode,
-                branchName: formData.branchName,
-                roomTypeCode: roomType.code,
-                roomTypeName: roomType.name, // 加入房型名稱
-                adults: formData.adults,
-                rooms: formData.rooms,
-                checkInDate: formData.checkInDate,
-                checkOutDate: formData.checkOutDate,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
-                userEmail: userId,
-                notificationEmail: formData.notificationEmail,
-                reminderStatus: "啟用",
-            };
+        // 批次收集所有資料列後一次寫入
+        const sheet = getSheet(SHEET_NAMES.reminders);
+        const rows = [];
 
-            addReminder(reminderData);
-            count++;
+        for (const roomType of formData.roomTypes) {
+            const newRow = [
+                Utilities.getUuid(),
+                "'" + formData.branchCode,
+                formData.branchName,
+                roomType.code,
+                roomType.name,
+                formData.adults,
+                formData.rooms,
+                formData.checkInDate,
+                formData.checkOutDate,
+                formData.startTime,
+                formData.endTime,
+                userId,
+                formData.notificationEmail || "",
+                formatLocalDateTime(new Date()),
+                "",
+                "未通知",
+                "啟用",
+            ];
+            rows.push(newRow);
         }
 
-        Logger.log(`成功新增 ${count} 筆提醒`);
+        if (rows.length > 0) {
+            const startRow = sheet.getLastRow() + 1;
+            sheet
+                .getRange(startRow, 1, rows.length, rows[0].length)
+                .setValues(rows);
+            SpreadsheetApp.flush();
+        }
+
+        Logger.log(`成功新增 ${rows.length} 筆提醒`);
 
         // 自動建立觸發器（如果不存在）
         // 使用 try-catch 確保即使觸發器建立失敗也不影響提醒建立
@@ -3326,7 +3285,7 @@ function submitReminder(formData) {
 
         return {
             success: true,
-            count: count,
+            count: rows.length,
             triggerCreated: triggerCreated,
         };
     } catch (error) {
