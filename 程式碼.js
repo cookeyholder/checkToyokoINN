@@ -3073,15 +3073,29 @@ function generateEmailContent(reminder, bookingUrl) {
  */
 function sendNotification(reminder, bookingUrl) {
     try {
-        const userEmail =
-            reminder.notificationEmail || reminder.userEmail;
-        const subject = `【東橫 INN 空房通知】${reminder.branchName} - ${reminder.checkInDate}`;
-
-        // 檢查郵件地址是否有效
-        if (!userEmail || userEmail.indexOf("@") === -1) {
-            Logger.log(`郵件地址無效: ${userEmail}`);
-            throw new Error(`郵件地址無效: ${userEmail}`);
+        let userEmail = "";
+        if (
+            reminder.notificationEmail &&
+            validateEmailFormat(reminder.notificationEmail)
+        ) {
+            userEmail = reminder.notificationEmail;
+        } else if (
+            reminder.userEmail &&
+            validateEmailFormat(reminder.userEmail)
+        ) {
+            userEmail = reminder.userEmail;
         }
+
+        if (!userEmail) {
+            Logger.log(
+                `郵件地址無效 (notificationEmail: ${reminder.notificationEmail}, userEmail: ${reminder.userEmail})`
+            );
+            throw new Error(
+                `郵件地址無效: 提醒收件 Email 與使用者 Email 皆無效`
+            );
+        }
+
+        const subject = `【東橫 INN 空房通知】${reminder.branchName} - ${reminder.checkInDate}`;
 
         const htmlContent = generateEmailContent(reminder, bookingUrl);
 
@@ -3458,6 +3472,14 @@ function validateReminderData(formData) {
     // 檢查房型選擇
     if (!Array.isArray(formData.roomTypes) || formData.roomTypes.length === 0) {
         throw new Error("請至少選擇一個房型");
+    }
+
+    // 檢查提醒收件 Email 格式
+    if (
+        !formData.notificationEmail ||
+        !validateEmailFormat(formData.notificationEmail)
+    ) {
+        throw new Error("提醒收件 Email 格式無效");
     }
 
     // 檢查日期有效性
