@@ -3240,10 +3240,20 @@ function submitReminder(formData) {
         }
 
         if (rows.length > 0) {
-            const startRow = sheet.getLastRow() + 1;
-            sheet
-                .getRange(startRow, 1, rows.length, rows[0].length)
-                .setValues(rows);
+            const lock = LockService.getScriptLock();
+            // 嘗試取得鎖，最多等待 10 秒
+            if (!lock.tryLock(10000)) {
+                throw new Error("系統繁忙中，無法取得寫入鎖，請稍後再試。");
+            }
+            try {
+                const startRow = sheet.getLastRow() + 1;
+                sheet
+                    .getRange(startRow, 1, rows.length, rows[0].length)
+                    .setValues(rows);
+                SpreadsheetApp.flush(); // 強制寫入以確保 getLastRow() 資料更新
+            } finally {
+                lock.releaseLock(); // 釋放鎖
+            }
         }
 
         Logger.log(`成功新增 ${rows.length} 筆提醒`);
