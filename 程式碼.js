@@ -657,22 +657,6 @@ function initializeRemindersSheet() {
             Logger.log(`✓ 已設定「${SHEET_NAMES.reminders}」標題列`);
         } else {
             Logger.log(`「${SHEET_NAMES.reminders}」工作表已存在且有資料`);
-            
-            // 自動遷移舊版提醒工作表結構
-            if (data.length > 0 && data[0].length > 0) {
-                const headers = data[0];
-                if (!headers.includes("提醒收件 Email")) {
-                    Logger.log("⚠️ 偵測到舊版提醒工作表，開始執行自動結構遷移...");
-                    sheet.insertColumnBefore(13); // 在原建立時間(第13欄)前插入一欄
-                    sheet.getRange(1, 13).setValue("提醒收件 Email");
-                    sheet.setColumnWidth(13, 200);
-                    sheet.getRange(1, 13).setFontWeight("bold");
-                    sheet.getRange(1, 13).setBackground("#f44336");
-                    sheet.getRange(1, 13).setFontColor("#ffffff");
-                    sheet.getRange(1, 13).setHorizontalAlignment("center");
-                    Logger.log("✓ 自動結構遷移完成，已插入「提醒收件 Email」欄位。");
-                }
-            }
         }
 
         return { success: true, sheetName: SHEET_NAMES.reminders };
