@@ -1379,6 +1379,13 @@ function findReminderRowByUuid(reminderUuid) {
     }
 }
 
+/**
+ * 建立單筆提醒的資料列陣列（對應提醒清單欄位 A-Q）
+ * @param {Object} data - 包含 branchCode, branchName, roomTypeCode, roomTypeName, adults, rooms, checkInDate, checkOutDate, startTime, endTime, notificationEmail
+ * @param {string} uuid - 唯一識別碼
+ * @param {string} userEmail - 使用者 Email
+ * @returns {Array} 依試算表欄位順序排列的 17 元素陣列
+ */
 function buildReminderRow(data, uuid, userEmail) {
     return [
         uuid,
