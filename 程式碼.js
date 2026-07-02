@@ -597,23 +597,6 @@ function initializeRemindersSheet() {
             100, // Q: 提醒狀態
         ];
 
-        // 舊版「提醒收件 Email」插欄遷移：若為舊版工作表（已有欄位但缺少「提醒收件 Email」），則在第 13 欄插欄
-        const lastCol = sheet.getLastColumn();
-        if (lastCol > 0) {
-            const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-            if (!currentHeaders.includes("提醒收件 Email")) {
-                Logger.log("⚠️ 偵測到舊版提醒工作表，開始執行自動結構遷移...");
-                sheet.insertColumnBefore(13); // 在原建立時間(第13欄)前插入一欄
-                sheet.getRange(1, 13).setValue("提醒收件 Email");
-                sheet.setColumnWidth(13, 200);
-                sheet.getRange(1, 13).setFontWeight("bold");
-                sheet.getRange(1, 13).setBackground("#f44336");
-                sheet.getRange(1, 13).setFontColor("#ffffff");
-                sheet.getRange(1, 13).setHorizontalAlignment("center");
-                Logger.log("✓ 自動結構遷移完成，已插入「提醒收件 Email」欄位。");
-            }
-        }
-
         // 自動補欄：檢查目前欄位數是否少於預期
         const currentCols = sheet.getLastColumn() || headers.length;
         const expectedCols = headers.length;
