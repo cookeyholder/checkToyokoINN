@@ -603,29 +603,72 @@ function initializeRemindersSheet() {
             Logger.log(`✓ 已建立工作表: ${SHEET_NAMES.reminders}`);
         }
 
+        // 預期欄位數與寬度設定
+        const headers = [
+            "UUID",            // A
+            "分店編號",        // B
+            "分店名稱",        // C
+            "房型代號",        // D
+            "房型名稱",        // E
+            "成人人數",        // F
+            "房間數",          // G
+            "入住日期",        // H
+            "退房日期",        // I
+            "提醒開始時間",    // J
+            "提醒結束時間",    // K
+            "使用者 Email",    // L
+            "提醒收件 Email",  // M
+            "建立時間",        // N
+            "最後通知時間",    // O
+            "通知狀態",        // P
+            "提醒狀態",        // Q
+        ];
+
+        const columnWidths = [
+            250, // A: UUID
+            100, // B: 分店編號
+            200, // C: 分店名稱
+            80,  // D: 房型代號
+            120, // E: 房型名稱
+            80,  // F: 成人人數
+            80,  // G: 房間數
+            100, // H: 入住日期
+            100, // I: 退房日期
+            120, // J: 提醒開始時間
+            120, // K: 提醒結束時間
+            200, // L: 使用者 Email
+            200, // M: 提醒收件 Email
+            150, // N: 建立時間
+            150, // O: 最後通知時間
+            100, // P: 通知狀態
+            100, // Q: 提醒狀態
+        ];
+
+        // 自動補欄：檢查目前欄位數是否少於預期
+        const currentCols = sheet.getLastColumn() || headers.length;
+        const expectedCols = headers.length;
+
+        if (currentCols < expectedCols) {
+            Logger.log(`⚠️ 偵測到工作表欄位數不足（目前 ${currentCols}，預期 ${expectedCols}），開始自動補欄...`);
+            for (let i = currentCols; i < expectedCols; i++) {
+                sheet.insertColumnAfter(i);
+                const colIndex = i + 1;
+                const cell = sheet.getRange(1, colIndex);
+                cell.setValue(headers[i]);
+                cell.setNumberFormat("@");
+                cell.setFontSize(12);
+                cell.setFontWeight("bold");
+                cell.setBackground("#f44336");
+                cell.setFontColor("#ffffff");
+                cell.setHorizontalAlignment("center");
+                sheet.setColumnWidth(colIndex, columnWidths[i]);
+            }
+            Logger.log(`✓ 自動補欄完成，已補足 ${expectedCols - currentCols} 個欄位`);
+        }
+
         // 檢查是否已有標題列
         const data = sheet.getDataRange().getValues();
         if (data.length === 0 || !data[0][0]) {
-            // 設定標題列（依照 spec.md，加上 UUID）
-            const headers = [
-                "UUID", // A
-                "分店編號", // B
-                "分店名稱", // C
-                "房型代號", // D
-                "房型名稱", // E
-                "成人人數", // F
-                "房間數", // G
-                "入住日期", // H
-                "退房日期", // I
-                "提醒開始時間", // J
-                "提醒結束時間", // K
-                "使用者 Email", // L
-                "提醒收件 Email", // M
-                "建立時間", // N
-                "最後通知時間", // O
-                "通知狀態", // P
-                "提醒狀態", // Q
-            ];
 
             sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 
@@ -641,27 +684,6 @@ function initializeRemindersSheet() {
             headerRange.setBackground("#f44336");
             headerRange.setFontColor("#ffffff");
             headerRange.setHorizontalAlignment("center");
-
-            // 設定欄寬（單位：像素）
-            const columnWidths = [
-                250, // A: UUID
-                100, // B: 分店編號
-                200, // C: 分店名稱
-                80, // D: 房型代號
-                120, // E: 房型名稱
-                80, // F: 成人人數
-                80, // G: 房間數
-                100, // H: 入住日期
-                100, // I: 退房日期
-                120, // J: 提醒開始時間
-                120, // K: 提醒結束時間
-                200, // L: 使用者 Email
-                200, // M: 提醒收件 Email
-                150, // N: 建立時間
-                150, // O: 最後通知時間
-                100, // P: 通知狀態
-                100, // Q: 提醒狀態
-            ];
 
             for (let i = 0; i < columnWidths.length; i++) {
                 sheet.setColumnWidth(i + 1, columnWidths[i]);
@@ -682,22 +704,6 @@ function initializeRemindersSheet() {
             Logger.log(`✓ 已設定「${SHEET_NAMES.reminders}」標題列`);
         } else {
             Logger.log(`「${SHEET_NAMES.reminders}」工作表已存在且有資料`);
-            
-            // 自動遷移舊版提醒工作表結構
-            if (data.length > 0 && data[0].length > 0) {
-                const headers = data[0];
-                if (!headers.includes("提醒收件 Email")) {
-                    Logger.log("⚠️ 偵測到舊版提醒工作表，開始執行自動結構遷移...");
-                    sheet.insertColumnBefore(13); // 在原建立時間(第13欄)前插入一欄
-                    sheet.getRange(1, 13).setValue("提醒收件 Email");
-                    sheet.setColumnWidth(13, 200);
-                    sheet.getRange(1, 13).setFontWeight("bold");
-                    sheet.getRange(1, 13).setBackground("#f44336");
-                    sheet.getRange(1, 13).setFontColor("#ffffff");
-                    sheet.getRange(1, 13).setHorizontalAlignment("center");
-                    Logger.log("✓ 自動結構遷移完成，已插入「提醒收件 Email」欄位。");
-                }
-            }
         }
 
         return { success: true, sheetName: SHEET_NAMES.reminders };
