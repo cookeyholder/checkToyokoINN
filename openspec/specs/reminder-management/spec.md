@@ -130,6 +130,19 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **THEN** 每個提醒應顯示目前狀態 (啟用/暫停)
 - **AND** 提供切換按鈕或開關供使用者變更狀態
 
+### Requirement: 動態欄位對應
+系統 SHALL 根據試算表標題列的名稱動態解析欄位索引，而非使用硬編碼數字。
+
+#### Scenario: 讀取時解析索引
+- **WHEN** 讀取提醒清單工作表的資料列
+- **THEN** 系統應先讀取標題列
+- **AND** 依標題名稱動態決定各欄位的索引位置
+
+#### Scenario: 標題名稱遺漏
+- **WHEN** 試算表缺少預期的標題名稱
+- **THEN** 系統應拋出明確錯誤訊息
+- **AND** 不繼續執行後續讀取
+
 ### Requirement: 檢查歷史記錄
 系統 SHALL 記錄每次提醒檢查的詳細結果到檢查歷史工作表。
 
