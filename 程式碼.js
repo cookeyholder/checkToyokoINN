@@ -394,11 +394,6 @@ function formatDateValue(value) {
  */
 function getColumnIndices(sheet) {
     const lastCol = sheet.getLastColumn();
-    if (lastCol === 0) {
-        throw new Error("試算表為空，無法解析欄位索引");
-    }
-    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-
     const headerMapping = [
         { key: "uuid", name: "UUID" },
         { key: "branchCode", name: "分店編號" },
@@ -418,6 +413,17 @@ function getColumnIndices(sheet) {
         { key: "notificationStatus", name: "通知狀態" },
         { key: "reminderStatus", name: "提醒狀態" },
     ];
+
+    if (lastCol === 0) {
+        // 直接回傳預設索引，避免對空工作表呼叫 getRange 拋出例外
+        const defaultIndices = {};
+        headerMapping.forEach((entry, idx) => {
+            defaultIndices[entry.key] = idx;
+        });
+        return defaultIndices;
+    }
+
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     const indices = {};
     for (const entry of headerMapping) {
