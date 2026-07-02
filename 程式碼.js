@@ -393,7 +393,11 @@ function formatDateValue(value) {
  * @returns {Object} 欄位名稱對應的索引物件
  */
 function getColumnIndices(sheet) {
-    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const lastCol = sheet.getLastColumn();
+    if (lastCol === 0) {
+        throw new Error("試算表為空，無法解析欄位索引");
+    }
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     const headerMapping = [
         { key: "uuid", name: "UUID" },
@@ -1278,6 +1282,7 @@ function getReminders(status, userEmail = null, includeDeleted = false) {
         }
 
         const indices = getColumnIndices(sheet);
+        const reminders = [];
 
         // 從第 2 列開始（跳過標題）
         for (let i = 1; i < data.length; i++) {
@@ -2549,12 +2554,12 @@ function updateReminderNotificationStatus(
         const sheet = getSheet(SHEET_NAMES.reminders);
         const indices = getColumnIndices(sheet);
 
-        // 更新通知狀態 (欄 N)
+        // 更新通知狀態 (通知狀態欄)
         sheet
             .getRange(rowIndex, indices.notificationStatus + 1)
             .setValue(notificationStatus);
 
-        // 更新最後通知時間 (欄 M)
+        // 更新最後通知時間 (最後通知時間欄)
         const lastNotificationTimeCol =
             indices.lastNotificationTime + 1;
         sheet
