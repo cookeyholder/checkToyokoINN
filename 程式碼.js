@@ -415,12 +415,7 @@ function getColumnIndices(sheet) {
     ];
 
     if (lastCol === 0) {
-        // 直接回傳預設索引，避免對空工作表呼叫 getRange 拋出例外
-        const defaultIndices = {};
-        headerMapping.forEach((entry, idx) => {
-            defaultIndices[entry.key] = idx;
-        });
-        return defaultIndices;
+        throw new Error("提醒清單工作表為空，無法取得標題列以解析欄位索引");
     }
 
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
