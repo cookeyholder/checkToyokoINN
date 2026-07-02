@@ -1379,6 +1379,28 @@ function findReminderRowByUuid(reminderUuid) {
     }
 }
 
+function buildReminderRow(data, uuid, userEmail) {
+    return [
+        uuid,
+        "'" + data.branchCode,
+        data.branchName,
+        data.roomTypeCode,
+        data.roomTypeName,
+        data.adults,
+        data.rooms,
+        data.checkInDate,
+        data.checkOutDate,
+        data.startTime,
+        data.endTime,
+        userEmail,
+        data.notificationEmail || "",
+        formatLocalDateTime(new Date()),
+        "",
+        "未通知",
+        "啟用",
+    ];
+}
+
 /**
  * 新增單筆提醒
  * @param {Object} reminderData 提醒資料
@@ -1388,25 +1410,7 @@ function addReminder(reminderData) {
     try {
         const sheet = getSheet(SHEET_NAMES.reminders);
         const uuid = Utilities.getUuid(); // 產生 UUID
-        const newRow = [
-            uuid, // UUID
-            "'" + reminderData.branchCode, // 加上單引號強制為文字格式
-            reminderData.branchName,
-            reminderData.roomTypeCode,
-            reminderData.roomTypeName,
-            reminderData.adults,
-            reminderData.rooms,
-            reminderData.checkInDate,
-            reminderData.checkOutDate,
-            reminderData.startTime,
-            reminderData.endTime,
-            reminderData.userEmail,
-            reminderData.notificationEmail || "",
-            formatLocalDateTime(new Date()), // 建立時間
-            "", // 最後通知時間 (初始為空)
-            "未通知", // 通知狀態
-            "啟用", // 提醒狀態 (預設啟用)
-        ];
+        const newRow = buildReminderRow(reminderData, uuid, reminderData.userEmail);
 
         sheet.appendRow(newRow);
         const rowIndex = sheet.getLastRow();
@@ -3226,25 +3230,12 @@ function submitReminder(formData) {
         const rows = [];
 
         for (const roomType of formData.roomTypes) {
-            const newRow = [
-                Utilities.getUuid(),
-                "'" + formData.branchCode,
-                formData.branchName,
-                roomType.code,
-                roomType.name,
-                formData.adults,
-                formData.rooms,
-                formData.checkInDate,
-                formData.checkOutDate,
-                formData.startTime,
-                formData.endTime,
-                userId,
-                formData.notificationEmail || "",
-                formatLocalDateTime(new Date()),
-                "",
-                "未通知",
-                "啟用",
-            ];
+            const rowData = {
+                ...formData,
+                roomTypeCode: roomType.code,
+                roomTypeName: roomType.name,
+            };
+            const newRow = buildReminderRow(rowData, Utilities.getUuid(), userId);
             rows.push(newRow);
         }
 
@@ -3253,7 +3244,6 @@ function submitReminder(formData) {
             sheet
                 .getRange(startRow, 1, rows.length, rows[0].length)
                 .setValues(rows);
-            SpreadsheetApp.flush();
         }
 
         Logger.log(`成功新增 ${rows.length} 筆提醒`);
