@@ -44,6 +44,11 @@ TBD - created by archiving change add-room-availability-checker. Update Purpose 
 - **THEN** 系統應在提醒清單工作表新增一列
 - **AND** 包含所有提醒參數 (分店編號、房型代號、日期、時間等)
 
+#### Scenario: 批次新增多個房型
+- **WHEN** 使用者選取多個房型一次提交
+- **THEN** 系統應收集所有資料列後以一次試算表寫入完成
+- **AND** 不逐列個別寫入
+
 #### Scenario: 刪除提醒
 - **WHEN** 使用者刪除特定提醒
 - **THEN** 系統應從試算表移除對應的列
