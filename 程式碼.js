@@ -3250,7 +3250,6 @@ function submitReminder(formData) {
                 sheet
                     .getRange(startRow, 1, rows.length, rows[0].length)
                     .setValues(rows);
-                SpreadsheetApp.flush(); // 強制寫入以確保 getLastRow() 資料更新
             } finally {
                 lock.releaseLock(); // 釋放鎖
             }
