@@ -1380,6 +1380,35 @@ function findReminderRowByUuid(reminderUuid) {
 }
 
 /**
+ * 建立單筆提醒的資料列陣列（對應提醒清單欄位 A-Q）
+ * @param {Object} data - 包含 branchCode, branchName, roomTypeCode, roomTypeName, adults, rooms, checkInDate, checkOutDate, startTime, endTime, notificationEmail
+ * @param {string} uuid - 唯一識別碼
+ * @param {string} userEmail - 使用者 Email
+ * @returns {Array} 依試算表欄位順序排列的 17 元素陣列
+ */
+function buildReminderRow(data, uuid, userEmail) {
+    return [
+        uuid,
+        "'" + data.branchCode,
+        data.branchName,
+        data.roomTypeCode,
+        data.roomTypeName,
+        data.adults,
+        data.rooms,
+        data.checkInDate,
+        data.checkOutDate,
+        data.startTime,
+        data.endTime,
+        userEmail,
+        data.notificationEmail || "",
+        formatLocalDateTime(new Date()),
+        "",
+        "未通知",
+        "啟用",
+    ];
+}
+
+/**
  * 新增單筆提醒
  * @param {Object} reminderData 提醒資料
  * @returns {number} 新增的列號
@@ -1388,25 +1417,7 @@ function addReminder(reminderData) {
     try {
         const sheet = getSheet(SHEET_NAMES.reminders);
         const uuid = Utilities.getUuid(); // 產生 UUID
-        const newRow = [
-            uuid, // UUID
-            "'" + reminderData.branchCode, // 加上單引號強制為文字格式
-            reminderData.branchName,
-            reminderData.roomTypeCode,
-            reminderData.roomTypeName,
-            reminderData.adults,
-            reminderData.rooms,
-            reminderData.checkInDate,
-            reminderData.checkOutDate,
-            reminderData.startTime,
-            reminderData.endTime,
-            reminderData.userEmail,
-            reminderData.notificationEmail || "",
-            formatLocalDateTime(new Date()), // 建立時間
-            "", // 最後通知時間 (初始為空)
-            "未通知", // 通知狀態
-            "啟用", // 提醒狀態 (預設啟用)
-        ];
+        const newRow = buildReminderRow(reminderData, uuid, reminderData.userEmail);
 
         sheet.appendRow(newRow);
         const rowIndex = sheet.getLastRow();
@@ -1415,59 +1426,6 @@ function addReminder(reminderData) {
         return { uuid: uuid };
     } catch (error) {
         Logger.log(`新增提醒失敗: ${error.message}`);
-        throw error;
-    }
-}
-
-/**
- * 批次新增提醒
- * @param {Object} batchData 批次資料
- *   {
- *     branchCode: string,
- *     branchName: string,
- *     roomTypes: Array<{code: number, name: string}>,
- *     adults: number,
- *     rooms: number,
- *     checkInDate: string,
- *     checkOutDate: string,
- *     startTime: string,
- *     endTime: string,
- *     userEmail: string
- *   }
- * @returns {Array<number>} 新增的列號陣列
- */
-function addBatchReminders(batchData) {
-    try {
-        const createdUuids = [];
-
-        // 為每個房型建立獨立的提醒記錄
-        for (const roomType of batchData.roomTypes) {
-            const reminderData = {
-                branchCode: batchData.branchCode,
-                branchName: batchData.branchName,
-                roomTypeCode: roomType.code,
-                roomTypeName: roomType.name,
-                adults: batchData.adults,
-                rooms: batchData.rooms,
-                checkInDate: batchData.checkInDate,
-                checkOutDate: batchData.checkOutDate,
-                startTime: batchData.startTime,
-                endTime: batchData.endTime,
-                userEmail: batchData.userEmail,
-                notificationEmail: batchData.notificationEmail || "",
-            };
-
-            const { uuid } = addReminder(reminderData);
-            createdUuids.push(uuid);
-        }
-
-        // 確保所有資料都已寫入試算表
-        SpreadsheetApp.flush();
-
-        Logger.log(`批次新增完成: ${createdUuids.length} 筆提醒`);
-        return createdUuids;
-    } catch (error) {
-        Logger.log(`批次新增提醒失敗: ${error.message}`);
         throw error;
     }
 }
@@ -3274,30 +3232,37 @@ function submitReminder(formData) {
         // 驗證表單資料
         validateReminderData(formData);
 
-        // 為每個房型建立提醒
-        let count = 0;
-        for (const roomType of formData.roomTypes) {
-            const reminderData = {
-                branchCode: formData.branchCode,
-                branchName: formData.branchName,
-                roomTypeCode: roomType.code,
-                roomTypeName: roomType.name, // 加入房型名稱
-                adults: formData.adults,
-                rooms: formData.rooms,
-                checkInDate: formData.checkInDate,
-                checkOutDate: formData.checkOutDate,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
-                userEmail: userId,
-                notificationEmail: formData.notificationEmail,
-                reminderStatus: "啟用",
-            };
+        // 批次收集所有資料列後一次寫入
+        const sheet = getSheet(SHEET_NAMES.reminders);
+        const rows = [];
 
-            addReminder(reminderData);
-            count++;
+        for (const roomType of formData.roomTypes) {
+            const rowData = {
+                ...formData,
+                roomTypeCode: roomType.code,
+                roomTypeName: roomType.name,
+            };
+            const newRow = buildReminderRow(rowData, Utilities.getUuid(), userId);
+            rows.push(newRow);
         }
 
-        Logger.log(`成功新增 ${count} 筆提醒`);
+        if (rows.length > 0) {
+            const lock = LockService.getScriptLock();
+            // 嘗試取得鎖，最多等待 10 秒
+            if (!lock.tryLock(10000)) {
+                throw new Error("系統繁忙中，無法取得寫入鎖，請稍後再試。");
+            }
+            try {
+                const startRow = sheet.getLastRow() + 1;
+                sheet
+                    .getRange(startRow, 1, rows.length, rows[0].length)
+                    .setValues(rows);
+            } finally {
+                lock.releaseLock(); // 釋放鎖
+            }
+        }
+
+        Logger.log(`成功新增 ${rows.length} 筆提醒`);
 
         // 自動建立觸發器（如果不存在）
         // 使用 try-catch 確保即使觸發器建立失敗也不影響提醒建立
@@ -3326,7 +3291,7 @@ function submitReminder(formData) {
 
         return {
             success: true,
-            count: count,
+            count: rows.length,
             triggerCreated: triggerCreated,
         };
     } catch (error) {
